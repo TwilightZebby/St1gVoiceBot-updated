@@ -1,0 +1,34 @@
+{
+  "dependencies": {
+    "bufferutil": "^4.0.6",
+    "discord.js": "^14.3.0",
+    "erlpack": "github:discord/erlpack",
+    "utf-8-validate": "^5.0.9",
+    "zlib-sync": "^0.1.7"
+  },
+  "name": "discordbottemplate",
+  "version": "3.0.0",
+  "description": "TwilightZebby's personal Discord Bot Template",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TwilightZebby/DiscordBotTemplate.git"
+  },
+  "keywords": [
+    "discord",
+    "discord-bot",
+    "discordjs",
+    "nodejs",
+    "discord-bot-template",
+    "template"
+  ],
+  "author": "TwilightZebby",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TwilightZebby/DiscordBotTemplate/issues"
+  },
+  "homepage": "https://github.com/TwilightZebby/DiscordBotTemplate#readme"
+}
