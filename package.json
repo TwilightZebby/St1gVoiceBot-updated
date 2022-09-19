@@ -6,29 +6,28 @@
     "utf-8-validate": "^5.0.9",
     "zlib-sync": "^0.1.7"
   },
-  "name": "discordbottemplate",
-  "version": "3.0.0",
-  "description": "TwilightZebby's personal Discord Bot Template",
+  "name": "st1gvoicebot-updated",
+  "version": "1.0.0",
+  "description": "TwilightZebby's concept update for Dr1fterX's St1gVoiceBot",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/TwilightZebby/DiscordBotTemplate.git"
+    "url": "git+https://github.com/TwilightZebby/St1gVoiceBot-updated.git"
   },
   "keywords": [
     "discord",
     "discord-bot",
     "discordjs",
     "nodejs",
-    "discord-bot-template",
-    "template"
+    "dr1fterx"
   ],
   "author": "TwilightZebby",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/TwilightZebby/DiscordBotTemplate/issues"
+    "url": "https://github.com/TwilightZebby/St1gVoiceBot-updated/issues"
   },
-  "homepage": "https://github.com/TwilightZebby/DiscordBotTemplate#readme"
+  "homepage": "https://github.com/TwilightZebby/St1gVoiceBot-updated#readme"
 }
