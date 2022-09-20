@@ -116,7 +116,7 @@ module.exports = {
 
 
 /**
-* Handles the "/settings view" Subcommand
+* Handles the "/config view" Subcommand
 * @param {ChatInputCommandInteraction} slashCommand 
 */
 async function viewSettings(slashCommand)
@@ -143,7 +143,7 @@ Please use the </config edit:${slashCommand.commandId}> Slash Command to set up 
 
 
 /**
- * Handles the "/settings edit" Subcommand
+ * Handles the "/config edit" Subcommand
  * @param {ChatInputCommandInteraction} slashCommand 
  */
 async function editSettings(slashCommand)
