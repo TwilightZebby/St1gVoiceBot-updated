@@ -3,7 +3,7 @@ const { Client, GatewayIntentBits, Collection } = require("discord.js");
 module.exports =
 {
     // Discord Client representing the Bot/App
-    DiscordClient: new Client({ intents: [ GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildIntegrations ] }),
+    DiscordClient: new Client({ intents: [ GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildIntegrations, GatewayIntentBits.GuildVoiceStates ] }),
 
     // Collections that are used in many locations
     Collections: {
