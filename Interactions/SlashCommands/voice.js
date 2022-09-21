@@ -24,7 +24,8 @@ module.exports = {
     //     IF SUBCOMMAND GROUP: name as "subcommandGroupName_subcommandName"
     SubcommandCooldown: {
         "create": 120,
-        "unlock": 30
+        "unlock": 30,
+        "lock": 30
     },
 
     // Scope of Command's usage
@@ -37,7 +38,8 @@ module.exports = {
     //     IF SUBCOMMAND GROUP: name as "subcommandGroupName_subcommandName"
     SubcommandScope: {
         "create": "GUILD",
-        "unlock": "GUILD"
+        "unlock": "GUILD",
+        "lock": "GUILD"
     },
 
 
@@ -65,6 +67,11 @@ module.exports = {
                 type: ApplicationCommandOptionType.Subcommand,
                 name: "unlock",
                 description: "Unlocks your Temp Voice Channel so anyone can join it"
+            },
+            {
+                type: ApplicationCommandOptionType.Subcommand,
+                name: "lock",
+                description: "Locks your Temp Voice Channel so only those you permit can join it"
             }
         ]
 
@@ -88,6 +95,9 @@ module.exports = {
 
             case "unlock":
                 return await unlockTempVoice(slashCommand);
+
+            case "lock":
+                return await lockTempVoice(slashCommand);
         }
     },
 
@@ -101,6 +111,43 @@ module.exports = {
     {
         //.
     }
+}
+
+
+
+
+
+/**
+* Handles the "/voice lock" Subcommand
+* @param {ChatInputCommandInteraction} slashCommand 
+*/
+async function lockTempVoice(slashCommand)
+{
+    // Bring in JSONs
+    const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
+    const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
+
+    // Verify Command User does own an active Temp VC
+    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
+    const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.member.id);
+    if ( CheckExistingVC.length < 1 || !CheckExistingVC.length || !CheckExistingVC ) { return await slashCommand.reply({ ephemeral: true, content: `You can only use this Command if you own a Temp Voice Channel!` }); }
+
+    // Ensure Command was used in a Temp VC
+    if ( slashCommand.channel.parentId !== VoiceSettings[slashCommand.guildId]["PARENT_CATEGORY_ID"] ) { return await slashCommand.reply({ ephemeral: true, content: `This Command cannot be used outside of Temp VCs!\nPlease go into the [Text Chat](<https://support.discord.com/hc/en-us/articles/4412085582359-Text-Channels-Text-Chat-In-Voice-Channels#h_01FMJT3SP072ZFJCZWR0EW6CJ1>) of your Voice Channel in order to use this Command.` }); }
+
+    // Unlock VC
+    await slashCommand.deferReply();
+
+    /** @type {VoiceChannel} */
+    const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+    await FetchedVoiceChannel.permissionOverwrites.edit(slashCommand.guildId, { Connect: false })
+    .then(async () => { await slashCommand.editReply({ content: `Locked Temp Voice Channel!` }); })
+    .catch(async (err) => {
+        //console.error(err);
+        await slashCommand.editReply({ content: `An error occured trying to lock your Temp Voice Channel...` });
+    });
+
+    return;
 }
 
 
@@ -213,7 +260,7 @@ Permissions I require in **<#${ParentCategoryId}>** :
         await CreatedVoiceChannel.send({ allowedMentions: { users: [VoiceCreator.id] }, content: `*Temp VC | Creator: <@${VoiceCreator.id}>*
 
 Welcome to your personal Voice Channel!
-It will be removed once every Member has left the Voice Channel. If you need help, use the </voice help:${slashCommand.commandId}> Command - and remember to follow this Server's Rules!` });
+It will be removed once every Member has left the Voice Channel. If you need help, use the </voice help:${slashCommand.commandId}> Command - and remember to follow this Server's Rules!\n\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬` });
     })
     .catch(async (err) => {
         //console.error(err);
