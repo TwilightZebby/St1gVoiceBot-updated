@@ -1,4 +1,4 @@
-const { ChatInputCommandInteraction, ChatInputApplicationCommandData, AutocompleteInteraction, ApplicationCommandType, ApplicationCommandOptionType, CategoryChannel, PermissionFlagsBits, PermissionsBitField, ChannelType } = require("discord.js");
+const { ChatInputCommandInteraction, ChatInputApplicationCommandData, AutocompleteInteraction, ApplicationCommandType, ApplicationCommandOptionType, CategoryChannel, PermissionFlagsBits, PermissionsBitField, ChannelType, VoiceChannel } = require("discord.js");
 const fs = require('fs');
 const { DiscordClient, Collections } = require("../../constants.js");
 const LocalizedErrors = require("../../JsonFiles/errorMessages.json");
@@ -17,13 +17,14 @@ module.exports = {
 
     // Cooldown, in seconds
     //     Defaults to 3 seconds if missing
-    Cooldown: 10,
+    Cooldown: 20,
 
     // Cooldowns for specific subcommands and/or subcommand-groups
     //     IF SUBCOMMAND: name as "subcommandName"
     //     IF SUBCOMMAND GROUP: name as "subcommandGroupName_subcommandName"
     SubcommandCooldown: {
-        "create": 60
+        "create": 120,
+        "unlock": 30
     },
 
     // Scope of Command's usage
@@ -35,7 +36,8 @@ module.exports = {
     //     IF SUBCOMMAND: name as "subcommandName"
     //     IF SUBCOMMAND GROUP: name as "subcommandGroupName_subcommandName"
     SubcommandScope: {
-        "create": "GUILD"
+        "create": "GUILD",
+        "unlock": "GUILD"
     },
 
 
@@ -58,6 +60,11 @@ module.exports = {
                 type: ApplicationCommandOptionType.Subcommand,
                 name: "create",
                 description: "Create a new Temp Voice Channel"
+            },
+            {
+                type: ApplicationCommandOptionType.Subcommand,
+                name: "unlock",
+                description: "Unlocks your Temp Voice Channel so anyone can join it"
             }
         ]
 
@@ -79,8 +86,8 @@ module.exports = {
             case "create":
                 return await createTempVoice(slashCommand);
 
-            /* case "placeholder":
-                return await placeholder(slashCommand); */
+            case "unlock":
+                return await unlockTempVoice(slashCommand);
         }
     },
 
@@ -95,6 +102,45 @@ module.exports = {
         //.
     }
 }
+
+
+
+
+
+/**
+* Handles the "/voice unlock" Subcommand
+* @param {ChatInputCommandInteraction} slashCommand 
+*/
+async function unlockTempVoice(slashCommand)
+{
+    // Bring in JSONs
+    const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
+    const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
+
+    // Verify Command User does own an active Temp VC
+    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
+    const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.member.id);
+    if ( CheckExistingVC.length < 1 || !CheckExistingVC.length || !CheckExistingVC ) { return await slashCommand.reply({ ephemeral: true, content: `You can only use this Command if you own a Temp Voice Channel!` }); }
+
+    // Ensure Command was used in a Temp VC
+    if ( slashCommand.channel.parentId !== VoiceSettings[slashCommand.guildId]["PARENT_CATEGORY_ID"] ) { return await slashCommand.reply({ ephemeral: true, content: `This Command cannot be used outside of Temp VCs!\nPlease go into the [Text Chat](<https://support.discord.com/hc/en-us/articles/4412085582359-Text-Channels-Text-Chat-In-Voice-Channels#h_01FMJT3SP072ZFJCZWR0EW6CJ1>) of your Voice Channel in order to use this Command.` }); }
+
+    // Unlock VC
+    await slashCommand.deferReply();
+
+    /** @type {VoiceChannel} */
+    const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+    await FetchedVoiceChannel.permissionOverwrites.edit(slashCommand.guildId, { Connect: true })
+    .then(async () => { await slashCommand.editReply({ content: `Unlocked Temp Voice Channel!` }); })
+    .catch(async (err) => {
+        //console.error(err);
+        await slashCommand.editReply({ content: `An error occured trying to unlock your Temp Voice Channel...` });
+    });
+
+    return;
+}
+
+
 
 
 
@@ -142,11 +188,14 @@ Permissions I require in **<#${ParentCategoryId}>** :
         type: ChannelType.GuildVoice,
         parent: ParentCategoryId,
         name: `${VoiceCreator.user.username}`,
-        permissionOverwrites: [{ id: VoiceCreator.id, allow: [PermissionFlagsBits.ManageChannels, PermissionFlagsBits.Connect] }],
         reason: `${VoiceCreator.user.username}#${VoiceCreator.user.discriminator} created a new Temp VC`
     })
     .then(async (CreatedVoiceChannel) => {
         // Voice Channel created
+        // Create Permission Overwrites for Channel Creator & Bot
+        await CreatedVoiceChannel.permissionOverwrites.edit(VoiceCreator.id, { ViewChannel: true, Connect: true, ManageChannels: true });
+        await CreatedVoiceChannel.permissionOverwrites.edit(DiscordClient.user.id, { ViewChannel: true, Connect: true, ManageChannels: true });
+
         // Save to JSON
         let newVoice = {
             "VOICE_CHANNEL_ID": CreatedVoiceChannel.id,
