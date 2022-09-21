@@ -1,4 +1,4 @@
-const { ChatInputCommandInteraction, ChatInputApplicationCommandData, AutocompleteInteraction, ApplicationCommandType, ApplicationCommandOptionType, CategoryChannel, PermissionFlagsBits, PermissionsBitField, ChannelType, VoiceChannel } = require("discord.js");
+const { ChatInputCommandInteraction, ChatInputApplicationCommandData, AutocompleteInteraction, ApplicationCommandType, ApplicationCommandOptionType, CategoryChannel, PermissionFlagsBits, PermissionsBitField, ChannelType, VoiceChannel, EmbedBuilder, Colors } = require("discord.js");
 const fs = require('fs');
 const { DiscordClient, Collections } = require("../../constants.js");
 const LocalizedErrors = require("../../JsonFiles/errorMessages.json");
@@ -24,6 +24,7 @@ module.exports = {
     //     IF SUBCOMMAND GROUP: name as "subcommandGroupName_subcommandName"
     SubcommandCooldown: {
         "create": 120,
+        "help": 30,
         "unlock": 30,
         "lock": 30
     },
@@ -38,6 +39,7 @@ module.exports = {
     //     IF SUBCOMMAND GROUP: name as "subcommandGroupName_subcommandName"
     SubcommandScope: {
         "create": "GUILD",
+        "help": "GUILD",
         "unlock": "GUILD",
         "lock": "GUILD"
     },
@@ -62,6 +64,11 @@ module.exports = {
                 type: ApplicationCommandOptionType.Subcommand,
                 name: "create",
                 description: "Create a new Temp Voice Channel"
+            },
+            {
+                type: ApplicationCommandOptionType.Subcommand,
+                name: "help",
+                description: "Shows what you can do with your Temp Voice Channel"
             },
             {
                 type: ApplicationCommandOptionType.Subcommand,
@@ -93,6 +100,9 @@ module.exports = {
             case "create":
                 return await createTempVoice(slashCommand);
 
+            case "help":
+                return await showHelp(slashCommand);
+
             case "unlock":
                 return await unlockTempVoice(slashCommand);
 
@@ -118,6 +128,50 @@ module.exports = {
 
 
 /**
+* Handles the "/voice help" Subcommand
+* @param {ChatInputCommandInteraction} slashCommand 
+*/
+async function showHelp(slashCommand)
+{
+    // Bring in JSONs
+    const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
+    const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
+
+    // Verify Command User does own an active Temp VC
+    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
+    const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.member.id);
+    if ( CheckExistingVC.length < 1 || !CheckExistingVC.length || !CheckExistingVC ) { return await slashCommand.reply({ ephemeral: true, content: `You can only use this Command if you own a Temp Voice Channel!` }); }
+
+    // Ensure Command was used in a Temp VC
+    if ( slashCommand.channel.parentId !== VoiceSettings[slashCommand.guildId]["PARENT_CATEGORY_ID"] ) { return await slashCommand.reply({ ephemeral: true, content: `This Command cannot be used outside of Temp VCs!\nPlease go into the [Text Chat](<https://support.discord.com/hc/en-us/articles/4412085582359-Text-Channels-Text-Chat-In-Voice-Channels#h_01FMJT3SP072ZFJCZWR0EW6CJ1>) of your Voice Channel in order to use this Command.` }); }
+
+    // Construct & Display Temp VC Help
+    await slashCommand.deferReply();
+
+    const HelpEmbed = new EmbedBuilder().setColor(Colors.Aqua)
+    .setTitle(`St1gVoiceBot's Available Commands`)
+    .setDescription(`These are all the Commands you can use to manage your Temp Voice Channel!`)
+    .addFields(
+        { name: `Lock Channel`, value: `</voice lock:${slashCommand.commandId}>`, inline: true },
+        { name: `Unlock Channel`, value: `</voice unlock:${slashCommand.commandId}>`, inline: true },
+        { name: `Rename Channel`, value: `</voice rename:${slashCommand.commandId}>`, inline: true },
+        { name: `Set User Limit`, value: `</voice limit:${slashCommand.commandId}>`, inline: true },
+        { name: `Permit User`, value: `</voice permit:${slashCommand.commandId}>`, inline: true },
+        { name: `Reject User`, value: `</voice reject:${slashCommand.commandId}>`, inline: true },
+        { name: `Vanish Channel`, value: `</voice vanish:${slashCommand.commandId}>`, inline: true },
+        { name: `Unvanish Channel`, value: `</voice unvanish:${slashCommand.commandId}>`, inline: true },
+        { name: `Claim Channel Ownership`, value: `</voice claim:${slashCommand.commandId}>` },
+        { name: `Transfer Channel Ownership`, value: `</voice transfer:${slashCommand.commandId}>` }
+    );
+
+    return await slashCommand.editReply({ embeds: [HelpEmbed] });
+}
+
+
+
+
+
+/**
 * Handles the "/voice lock" Subcommand
 * @param {ChatInputCommandInteraction} slashCommand 
 */
@@ -135,7 +189,7 @@ async function lockTempVoice(slashCommand)
     // Ensure Command was used in a Temp VC
     if ( slashCommand.channel.parentId !== VoiceSettings[slashCommand.guildId]["PARENT_CATEGORY_ID"] ) { return await slashCommand.reply({ ephemeral: true, content: `This Command cannot be used outside of Temp VCs!\nPlease go into the [Text Chat](<https://support.discord.com/hc/en-us/articles/4412085582359-Text-Channels-Text-Chat-In-Voice-Channels#h_01FMJT3SP072ZFJCZWR0EW6CJ1>) of your Voice Channel in order to use this Command.` }); }
 
-    // Unlock VC
+    // Lock VC
     await slashCommand.deferReply();
 
     /** @type {VoiceChannel} */
