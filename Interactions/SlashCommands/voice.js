@@ -26,7 +26,8 @@ module.exports = {
         "create": 120,
         "help": 30,
         "unlock": 30,
-        "lock": 30
+        "lock": 30,
+        "rename": 60
     },
 
     // Scope of Command's usage
@@ -41,7 +42,8 @@ module.exports = {
         "create": "GUILD",
         "help": "GUILD",
         "unlock": "GUILD",
-        "lock": "GUILD"
+        "lock": "GUILD",
+        "rename": "GUILD"
     },
 
 
@@ -79,8 +81,23 @@ module.exports = {
                 type: ApplicationCommandOptionType.Subcommand,
                 name: "lock",
                 description: "Locks your Temp Voice Channel so only those you permit can join it"
+            },
+            {
+                type: ApplicationCommandOptionType.Subcommand,
+                name: "rename",
+                description: "Change the name of your Temp Voice Channel",
+                options: [
+                    {
+                        type: ApplicationCommandOptionType.String,
+                        name: "name",
+                        description: "The new name you want",
+                        min_length: 1,
+                        max_length: 100,
+                        required: true
+                    }
+                ]
             }
-        ]
+        ];
 
         return Data;
     },
@@ -108,6 +125,9 @@ module.exports = {
 
             case "lock":
                 return await lockTempVoice(slashCommand);
+
+            case "rename":
+                return await renameTempVoice(slashCommand);
         }
     },
 
@@ -198,6 +218,44 @@ async function showHelp(slashCommand)
 
 
 /**
+* Handles the "/voice rename" Subcommand
+* @param {ChatInputCommandInteraction} slashCommand 
+*/
+async function renameTempVoice(slashCommand)
+{
+    // Check Command can be used
+    if ( await canCommandBeUsed(slashCommand) === false ) { return; }
+
+    // Bring in JSONs
+    const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
+
+    // Grab VC
+    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
+    const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.member.id);
+
+    // Fetch input
+    const InputNewName = slashCommand.options.getString("name", true);
+
+    // Rename VC
+    await slashCommand.deferReply();
+
+    /** @type {VoiceChannel} */
+    const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+    await FetchedVoiceChannel.edit({ name: InputNewName })
+    .then(async () => { await slashCommand.editReply({ content: `Renamed Temp Voice Channel to ${InputNewName}` }); })
+    .catch(async (err) => {
+        //console.error(err);
+        await slashCommand.editReply({ content: `An error occured trying to rename your Temp Voice Channel...` });
+    });
+
+    return;
+}
+
+
+
+
+
+/**
 * Handles the "/voice lock" Subcommand
 * @param {ChatInputCommandInteraction} slashCommand 
 */
@@ -205,6 +263,13 @@ async function lockTempVoice(slashCommand)
 {
     // Check Command can be used
     if ( await canCommandBeUsed(slashCommand) === false ) { return; }
+
+    // Bring in JSONs
+    const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
+
+    // Grab VC
+    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
+    const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.member.id);
 
     // Lock VC
     await slashCommand.deferReply();
@@ -233,6 +298,13 @@ async function unlockTempVoice(slashCommand)
 {
     // Check Command can be used
     if ( await canCommandBeUsed(slashCommand) === false ) { return; }
+
+    // Bring in JSONs
+    const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
+
+    // Grab VC
+    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
+    const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.member.id);
 
     // Unlock VC
     await slashCommand.deferReply();
