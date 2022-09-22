@@ -128,10 +128,11 @@ module.exports = {
 
 
 /**
-* Handles the "/voice help" Subcommand
-* @param {ChatInputCommandInteraction} slashCommand 
+* Used to check if the Command was used by a VC Owner & in a VC
+* @param {ChatInputCommandInteraction} slashCommand
+* @returns {Boolean}
 */
-async function showHelp(slashCommand)
+async function canCommandBeUsed(slashCommand)
 {
     // Bring in JSONs
     const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
@@ -140,10 +141,35 @@ async function showHelp(slashCommand)
     // Verify Command User does own an active Temp VC
     const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
     const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.member.id);
-    if ( CheckExistingVC.length < 1 || !CheckExistingVC.length || !CheckExistingVC ) { return await slashCommand.reply({ ephemeral: true, content: `You can only use this Command if you own a Temp Voice Channel!` }); }
+    if ( CheckExistingVC.length < 1 || !CheckExistingVC.length || !CheckExistingVC )
+    { 
+        await slashCommand.reply({ ephemeral: true, content: `You can only use this Command if you own a Temp Voice Channel!` });
+        return false;
+    }
 
     // Ensure Command was used in a Temp VC
-    if ( slashCommand.channel.parentId !== VoiceSettings[slashCommand.guildId]["PARENT_CATEGORY_ID"] ) { return await slashCommand.reply({ ephemeral: true, content: `This Command cannot be used outside of Temp VCs!\nPlease go into the [Text Chat](<https://support.discord.com/hc/en-us/articles/4412085582359-Text-Channels-Text-Chat-In-Voice-Channels#h_01FMJT3SP072ZFJCZWR0EW6CJ1>) of your Voice Channel in order to use this Command.` }); }
+    if ( slashCommand.channel.parentId !== VoiceSettings[slashCommand.guildId]["PARENT_CATEGORY_ID"] )
+    { 
+        await slashCommand.reply({ ephemeral: true, content: `This Command cannot be used outside of Temp VCs!\nPlease go into the [Text Chat](<https://support.discord.com/hc/en-us/articles/4412085582359-Text-Channels-Text-Chat-In-Voice-Channels#h_01FMJT3SP072ZFJCZWR0EW6CJ1>) of your Voice Channel in order to use this Command.` });
+        return false;
+    }
+
+    // Command can be used
+    return true;
+}
+
+
+
+
+
+/**
+* Handles the "/voice help" Subcommand
+* @param {ChatInputCommandInteraction} slashCommand 
+*/
+async function showHelp(slashCommand)
+{
+    // Check Command can be used
+    if ( await canCommandBeUsed(slashCommand) === false ) { return; }
 
     // Construct & Display Temp VC Help
     await slashCommand.deferReply();
@@ -177,17 +203,8 @@ async function showHelp(slashCommand)
 */
 async function lockTempVoice(slashCommand)
 {
-    // Bring in JSONs
-    const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
-    const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
-
-    // Verify Command User does own an active Temp VC
-    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
-    const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.member.id);
-    if ( CheckExistingVC.length < 1 || !CheckExistingVC.length || !CheckExistingVC ) { return await slashCommand.reply({ ephemeral: true, content: `You can only use this Command if you own a Temp Voice Channel!` }); }
-
-    // Ensure Command was used in a Temp VC
-    if ( slashCommand.channel.parentId !== VoiceSettings[slashCommand.guildId]["PARENT_CATEGORY_ID"] ) { return await slashCommand.reply({ ephemeral: true, content: `This Command cannot be used outside of Temp VCs!\nPlease go into the [Text Chat](<https://support.discord.com/hc/en-us/articles/4412085582359-Text-Channels-Text-Chat-In-Voice-Channels#h_01FMJT3SP072ZFJCZWR0EW6CJ1>) of your Voice Channel in order to use this Command.` }); }
+    // Check Command can be used
+    if ( await canCommandBeUsed(slashCommand) === false ) { return; }
 
     // Lock VC
     await slashCommand.deferReply();
@@ -214,17 +231,8 @@ async function lockTempVoice(slashCommand)
 */
 async function unlockTempVoice(slashCommand)
 {
-    // Bring in JSONs
-    const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
-    const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
-
-    // Verify Command User does own an active Temp VC
-    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
-    const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.member.id);
-    if ( CheckExistingVC.length < 1 || !CheckExistingVC.length || !CheckExistingVC ) { return await slashCommand.reply({ ephemeral: true, content: `You can only use this Command if you own a Temp Voice Channel!` }); }
-
-    // Ensure Command was used in a Temp VC
-    if ( slashCommand.channel.parentId !== VoiceSettings[slashCommand.guildId]["PARENT_CATEGORY_ID"] ) { return await slashCommand.reply({ ephemeral: true, content: `This Command cannot be used outside of Temp VCs!\nPlease go into the [Text Chat](<https://support.discord.com/hc/en-us/articles/4412085582359-Text-Channels-Text-Chat-In-Voice-Channels#h_01FMJT3SP072ZFJCZWR0EW6CJ1>) of your Voice Channel in order to use this Command.` }); }
+    // Check Command can be used
+    if ( await canCommandBeUsed(slashCommand) === false ) { return; }
 
     // Unlock VC
     await slashCommand.deferReply();
