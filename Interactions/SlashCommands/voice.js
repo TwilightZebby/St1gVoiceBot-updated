@@ -1,4 +1,4 @@
-const { ChatInputCommandInteraction, ChatInputApplicationCommandData, AutocompleteInteraction, ApplicationCommandType, ApplicationCommandOptionType, CategoryChannel, PermissionFlagsBits, PermissionsBitField, ChannelType, VoiceChannel, EmbedBuilder, Colors } = require("discord.js");
+const { ChatInputCommandInteraction, ChatInputApplicationCommandData, AutocompleteInteraction, ApplicationCommandType, ApplicationCommandOptionType, CategoryChannel, PermissionFlagsBits, PermissionsBitField, ChannelType, VoiceChannel, EmbedBuilder, Colors, GuildMember } = require("discord.js");
 const fs = require('fs');
 const { DiscordClient, Collections } = require("../../constants.js");
 const LocalizedErrors = require("../../JsonFiles/errorMessages.json");
@@ -28,7 +28,9 @@ module.exports = {
         "unlock": 30,
         "lock": 30,
         "rename": 60,
-        "limit": 30
+        "limit": 30,
+        "permit": 10,
+        "reject": 10
     },
 
     // Scope of Command's usage
@@ -45,7 +47,9 @@ module.exports = {
         "unlock": "GUILD",
         "lock": "GUILD",
         "rename": "GUILD",
-        "limit": "GUILD"
+        "limit": "GUILD",
+        "permit": "GUILD",
+        "reject": "GUILD"
     },
 
 
@@ -95,7 +99,7 @@ module.exports = {
                         min_length: 1,
                         max_length: 100,
                         required: true
-                    }]
+                }]
             },
             {
                 type: ApplicationCommandOptionType.Subcommand,
@@ -108,7 +112,29 @@ module.exports = {
                         min_value: 0,
                         max_value: 99,
                         required: true
-                    }]
+                }]
+            },
+            {
+                type: ApplicationCommandOptionType.Subcommand,
+                name: "permit",
+                description: "Grant a Member access to your VC, even if the VC is locked or vanished",
+                options: [{
+                        type: ApplicationCommandOptionType.User,
+                        name: "member",
+                        description: "The Member you want to permit into your VC",
+                        required: true
+                }]
+            },
+            {
+                type: ApplicationCommandOptionType.Subcommand,
+                name: "reject",
+                description: "Reject a Member from your VC, preventing them from joining your VC again",
+                options: [{
+                        type: ApplicationCommandOptionType.User,
+                        name: "member",
+                        description: "The Member you want to reject from your VC",
+                        required: true
+                }]
             }
         ];
 
@@ -144,6 +170,12 @@ module.exports = {
 
             case "limit":
                 return await limitTempVoice(slashCommand);
+
+            case "permit":
+                return await permitMember(slashCommand);
+
+            case "reject":
+                return await rejectMember(slashCommand);
         }
     },
 
@@ -227,6 +259,106 @@ async function showHelp(slashCommand)
     );
 
     return await slashCommand.editReply({ embeds: [HelpEmbed] });
+}
+
+
+
+
+
+/**
+* Handles the "/voice reject" Subcommand
+* @param {ChatInputCommandInteraction} slashCommand 
+*/
+async function rejectMember(slashCommand)
+{
+    // Check Command can be used
+    if ( await canCommandBeUsed(slashCommand) === false ) { return; }
+
+    // Bring in JSONs
+    const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
+
+    // Grab VC
+    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
+    const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.member.id);
+
+    // Fetch input
+    /** @type {GuildMember} */
+    const InputMember = slashCommand.options.getMember("member");
+    // Verify inputted User *is* a Member in the Guild
+    if ( !InputMember ) { return await slashCommand.reply({ ephemeral: true, content: `Sorry, but either that wasn't a valid Member from this Server, or an error occurred trying to find that Member.` }); }
+    // Ensure Voice Channel Creator doesn't choose themselves!
+    if ( InputMember.id === slashCommand.user.id ) { return await slashCommand.reply({ ephemeral: true, content: `You cannot use this Command on yourself!` }); }
+
+    // Reject Member
+    await slashCommand.deferReply();
+
+    /** @type {VoiceChannel} */
+    const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+    await InputMember.fetch(); // Just to ensure up to date Voice State
+
+    // If Member is inside Voice Channel, force-disconnect them
+    if ( InputMember.voice.channelId === FetchedVoiceChannel.id )
+    {
+        try { await InputMember.voice.disconnect(); }
+        catch (err) {
+            //console.error(err);
+        }
+    }
+
+    // Remove Member's previous Permission Overwrites first, just in case VC is locked/vanished (so that the atEveryone Permissions can be inherited)
+    await FetchedVoiceChannel.permissionOverwrites.delete(InputMember.id);
+
+    // Override Connect Permission
+    await FetchedVoiceChannel.permissionOverwrites.edit(InputMember.id, { Connect: false })
+    .then(async () => { await slashCommand.editReply({ allowedMentions: { parse: [] }, content: `Rejected <@${InputMember.id}> from your Temp Voice Channel!` }); })
+    .catch(async (err) => {
+        //console.error(err);
+        await slashCommand.editReply({ allowedMentions: { parse: [] }, content: `An error occured trying to reject <@${InputMember.id}> from your Temp Voice Channel...` });
+    });
+
+    return;
+}
+
+
+
+
+
+/**
+* Handles the "/voice permit" Subcommand
+* @param {ChatInputCommandInteraction} slashCommand 
+*/
+async function permitMember(slashCommand)
+{
+    // Check Command can be used
+    if ( await canCommandBeUsed(slashCommand) === false ) { return; }
+
+    // Bring in JSONs
+    const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
+
+    // Grab VC
+    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
+    const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.member.id);
+
+    // Fetch input
+    const InputMember = slashCommand.options.getMember("member");
+    // Verify inputted User *is* a Member in the Guild
+    if ( !InputMember ) { return await slashCommand.reply({ ephemeral: true, content: `Sorry, but either that wasn't a valid Member from this Server, or an error occurred trying to find that Member.` }); }
+    // Ensure Voice Channel Creator doesn't choose themselves!
+    if ( InputMember.id === slashCommand.user.id ) { return await slashCommand.reply({ ephemeral: true, content: `You cannot use this Command on yourself!` }); }
+
+    // Permit Member
+    await slashCommand.deferReply();
+
+    /** @type {VoiceChannel} */
+    const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+    await FetchedVoiceChannel.permissionOverwrites.edit(InputMember.id, { ViewChannel: true, Connect: true })
+    .then(async () => { await slashCommand.editReply({ allowedMentions: { parse: [] }, content: `Permitted <@${InputMember.id}> to join your Temp Voice Channel!` }); })
+    .catch(async (err) => {
+        //console.error(err);
+        await slashCommand.editReply({ allowedMentions: { parse: [] }, content: `An error occured trying to permit <@${InputMember.id}> to your Temp Voice Channel...` });
+    });
+
+    return;
 }
 
 
