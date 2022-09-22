@@ -27,7 +27,8 @@ module.exports = {
         "help": 30,
         "unlock": 30,
         "lock": 30,
-        "rename": 60
+        "rename": 60,
+        "limit": 30
     },
 
     // Scope of Command's usage
@@ -43,7 +44,8 @@ module.exports = {
         "help": "GUILD",
         "unlock": "GUILD",
         "lock": "GUILD",
-        "rename": "GUILD"
+        "rename": "GUILD",
+        "limit": "GUILD"
     },
 
 
@@ -86,16 +88,27 @@ module.exports = {
                 type: ApplicationCommandOptionType.Subcommand,
                 name: "rename",
                 description: "Change the name of your Temp Voice Channel",
-                options: [
-                    {
+                options: [{
                         type: ApplicationCommandOptionType.String,
                         name: "name",
                         description: "The new name you want",
                         min_length: 1,
                         max_length: 100,
                         required: true
-                    }
-                ]
+                    }]
+            },
+            {
+                type: ApplicationCommandOptionType.Subcommand,
+                name: "limit",
+                description: "Set or remove a limit on how many Members can join the VC",
+                options: [{
+                        type: ApplicationCommandOptionType.Integer,
+                        name: "limit",
+                        description: "The limit you want - type 0 (zero) to remove the Member limit",
+                        min_value: 0,
+                        max_value: 99,
+                        required: true
+                    }]
             }
         ];
 
@@ -128,6 +141,9 @@ module.exports = {
 
             case "rename":
                 return await renameTempVoice(slashCommand);
+
+            case "limit":
+                return await limitTempVoice(slashCommand);
         }
     },
 
@@ -211,6 +227,44 @@ async function showHelp(slashCommand)
     );
 
     return await slashCommand.editReply({ embeds: [HelpEmbed] });
+}
+
+
+
+
+
+/**
+* Handles the "/voice limit" Subcommand
+* @param {ChatInputCommandInteraction} slashCommand 
+*/
+async function limitTempVoice(slashCommand)
+{
+    // Check Command can be used
+    if ( await canCommandBeUsed(slashCommand) === false ) { return; }
+
+    // Bring in JSONs
+    const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
+
+    // Grab VC
+    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
+    const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.member.id);
+
+    // Fetch input
+    const InputNewLimit = slashCommand.options.getInteger("limit", true);
+
+    // Rename VC
+    await slashCommand.deferReply();
+
+    /** @type {VoiceChannel} */
+    const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+    await FetchedVoiceChannel.edit({ userLimit: InputNewLimit })
+    .then(async () => { await slashCommand.editReply({ content: InputNewLimit === 0 ? `Removed the Member Limit for your Temp Voice Channel` : `Set the Member Limit for your Temp Voice Channel to ${InputNewLimit}` }); })
+    .catch(async (err) => {
+        //console.error(err);
+        await slashCommand.editReply({ content: `An error occured trying to change the Member Limit for your Temp Voice Channel...` });
+    });
+
+    return;
 }
 
 
