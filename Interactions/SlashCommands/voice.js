@@ -32,7 +32,9 @@ module.exports = {
         "permit": 10,
         "reject": 10,
         "vanish": 30,
-        "unvanish": 30
+        "unvanish": 30,
+        "claim": 30,
+        "transfer": 30
     },
 
     // Scope of Command's usage
@@ -53,7 +55,9 @@ module.exports = {
         "permit": "GUILD",
         "reject": "GUILD",
         "vanish": "GUILD",
-        "unvanish": "GUILD"
+        "unvanish": "GUILD",
+        "claim": "GUILD",
+        "transfer": "GUILD"
     },
 
 
@@ -149,6 +153,22 @@ module.exports = {
                 type: ApplicationCommandOptionType.Subcommand,
                 name: "unvanish",
                 description: "Reveal your VC again, allowing anyone to see it (and join if not locked)"
+            },
+            {
+                type: ApplicationCommandOptionType.Subcommand,
+                name: "claim",
+                description: "Claim ownership of a VC that doesn't have its previous Owner inside of it"
+            },
+            {
+                type: ApplicationCommandOptionType.Subcommand,
+                name: "transfer",
+                description: "Transfer Ownership of your VC to another Member",
+                options: [{
+                    type: ApplicationCommandOptionType.User,
+                    name: "member",
+                    description: "The Member you want to transfer VC Ownership to",
+                    required: true
+                }]
             }
         ];
 
@@ -196,6 +216,12 @@ module.exports = {
 
             case "unvanish":
                 return await unvanishTempVoice(slashCommand);
+
+            case "claim":
+                return await claimOwnership(slashCommand);
+
+            case "transfer":
+                return await transferOwnership(slashCommand);
         }
     },
 
@@ -256,8 +282,14 @@ async function canCommandBeUsed(slashCommand)
 */
 async function showHelp(slashCommand)
 {
-    // Check Command can be used
-    if ( await canCommandBeUsed(slashCommand) === false ) { return; }
+    const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
+
+    // Ensure Command was used in a Temp VC
+    if ( slashCommand.channel.parentId !== VoiceSettings[slashCommand.guildId]["PARENT_CATEGORY_ID"] )
+    { 
+        await slashCommand.reply({ ephemeral: true, content: `This Command cannot be used outside of Temp VCs!\nPlease go into the [Text Chat](<https://support.discord.com/hc/en-us/articles/4412085582359-Text-Channels-Text-Chat-In-Voice-Channels#h_01FMJT3SP072ZFJCZWR0EW6CJ1>) of your Voice Channel in order to use this Command.` });
+        return false;
+    }
 
     // Construct & Display Temp VC Help
     await slashCommand.deferReply();
@@ -279,6 +311,56 @@ async function showHelp(slashCommand)
     );
 
     return await slashCommand.editReply({ embeds: [HelpEmbed] });
+}
+
+
+
+
+
+/**
+* Handles the "/voice claim" Subcommand
+* @param {ChatInputCommandInteraction} slashCommand 
+*/
+async function claimOwnership(slashCommand)
+{
+    // Check Command can be used
+    if ( await canCommandBeUsed(slashCommand) === false ) { return; }
+
+    // Bring in JSONs
+    const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
+    const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
+    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
+
+    // Verify Member doesn't already own a Temp VC
+    const CheckOwnedVCs = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.user.id);
+    if ( CheckOwnedVCs.length > 0 ) { return await slashCommand.reply({ ephemeral: true, content: `You cannot claim another Temp Voice Channel when you already own one! (You currently own <#${CheckOwnedVCs[0]["VOICE_CHANNEL_ID"]}> )` }); }
+
+    // Verify Member is in a Temp VC
+    const CommandMember = await slashCommand.guild.members.fetch(slashCommand.user.id) // Ensure updated Voice State
+    if ( CommandMember.voice?.channelId == null ) { return await slashCommand.reply({ ephemeral: true, content: `You can only use this Command when connected to a Temp Voice Channel!` }); }
+
+    // Grab VC
+    const ConnectedVoiceChannel = await CommandMember.voice.channel.fetch();
+    const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['VOICE_CHANNEL_ID'] === ConnectedVoiceChannel.id);
+    // Verify Member is in Temp VC (Part 2)
+    if ( ConnectedVoiceChannel.parentId !== VoiceSettings[slashCommand.guildId]["PARENT_CATEGORY_ID"] ) { return await slashCommand.reply({ ephemeral: true, content: `You can only use this Command when connected to a Temp Voice Channel!` }); }
+
+    // Verify current VC's owner isn't still connected, if yes, prevent ownership claim
+    if ( ConnectedVoiceChannel.members.has(CheckExistingVC[0]["CHANNEL_OWNER_ID"]) ) { return await slashCommand.reply({ ephemeral: true, allowedMentions: { parse: [] }, content: `You cannot claim ownership of the <#${ConnectedVoiceChannel.id}> Temp Voice Channel when it's owner ( <@${CheckExistingVC[0]["CHANNEL_OWNER_ID"]}> ) is still connected to it!` }); }
+
+    // Claim Ownership
+    await slashCommand.deferReply();
+
+    const UpdatedJSONObject = CheckExistingVC[0];
+    UpdatedJSONObject["CHANNEL_OWNER_ID"] = CommandMember.id;
+    ActiveTempVoices[`${ConnectedVoiceChannel.id}`] = UpdatedJSONObject;
+    fs.writeFile('./JsonFiles/hidden/activeTempVoices.json', JSON.stringify(ActiveTempVoices, null, 4), async (err) => {
+        if ( err ) { return await slashCommand.editReply({ content: `Sorry, something went wrong while claim Ownership of that VC... Please try again later` }); }
+    });
+
+    await slashCommand.editReply({ content: `Claimed Ownership of the <#${ConnectedVoiceChannel.id}> Temp Voice Channel!` });
+
+    return;
 }
 
 
