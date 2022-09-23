@@ -30,7 +30,9 @@ module.exports = {
         "rename": 60,
         "limit": 30,
         "permit": 10,
-        "reject": 10
+        "reject": 10,
+        "vanish": 30,
+        "unvanish": 30
     },
 
     // Scope of Command's usage
@@ -49,7 +51,9 @@ module.exports = {
         "rename": "GUILD",
         "limit": "GUILD",
         "permit": "GUILD",
-        "reject": "GUILD"
+        "reject": "GUILD",
+        "vanish": "GUILD",
+        "unvanish": "GUILD"
     },
 
 
@@ -135,6 +139,16 @@ module.exports = {
                         description: "The Member you want to reject from your VC",
                         required: true
                 }]
+            },
+            {
+                type: ApplicationCommandOptionType.Subcommand,
+                name: "vanish",
+                description: "Hide your VC, preventing others from seeing & joining it unless you permit them"
+            },
+            {
+                type: ApplicationCommandOptionType.Subcommand,
+                name: "unvanish",
+                description: "Reveal your VC again, allowing anyone to see it (and join if not locked)"
             }
         ];
 
@@ -176,6 +190,12 @@ module.exports = {
 
             case "reject":
                 return await rejectMember(slashCommand);
+
+            case "vanish":
+                return await vanishTempVoice(slashCommand);
+
+            case "unvanish":
+                return await unvanishTempVoice(slashCommand);
         }
     },
 
@@ -259,6 +279,76 @@ async function showHelp(slashCommand)
     );
 
     return await slashCommand.editReply({ embeds: [HelpEmbed] });
+}
+
+
+
+
+
+/**
+* Handles the "/voice unvanish" Subcommand
+* @param {ChatInputCommandInteraction} slashCommand 
+*/
+async function unvanishTempVoice(slashCommand)
+{
+    // Check Command can be used
+    if ( await canCommandBeUsed(slashCommand) === false ) { return; }
+
+    // Bring in JSONs
+    const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
+
+    // Grab VC
+    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
+    const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.member.id);
+
+    // Unvanish/Reveal VC
+    await slashCommand.deferReply();
+
+    /** @type {VoiceChannel} */
+    const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+    await FetchedVoiceChannel.permissionOverwrites.edit(slashCommand.guildId, { ViewChannel: null })
+    .then(async () => { await slashCommand.editReply({ content: `Unvanished your Temp Voice Channel!\nYou can vanish/hide it again using </voice vanish:${slashCommand.commandId}>` }); })
+    .catch(async (err) => {
+        //console.error(err);
+        await slashCommand.editReply({ content: `An error occured trying to unvanish your Temp Voice Channel...` });
+    });
+
+    return;
+}
+
+
+
+
+
+/**
+* Handles the "/voice vanish" Subcommand
+* @param {ChatInputCommandInteraction} slashCommand 
+*/
+async function vanishTempVoice(slashCommand)
+{
+    // Check Command can be used
+    if ( await canCommandBeUsed(slashCommand) === false ) { return; }
+
+    // Bring in JSONs
+    const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
+
+    // Grab VC
+    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
+    const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.member.id);
+
+    // Vanish/Hide VC
+    await slashCommand.deferReply();
+
+    /** @type {VoiceChannel} */
+    const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+    await FetchedVoiceChannel.permissionOverwrites.edit(slashCommand.guildId, { ViewChannel: false })
+    .then(async () => { await slashCommand.editReply({ content: `Vanished your Temp Voice Channel!\nYou can unvanish/reveal it again using </voice unvanish:${slashCommand.commandId}>` }); })
+    .catch(async (err) => {
+        //console.error(err);
+        await slashCommand.editReply({ content: `An error occured trying to vanish your Temp Voice Channel...` });
+    });
+
+    return;
 }
 
 
