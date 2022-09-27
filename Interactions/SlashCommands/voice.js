@@ -318,6 +318,58 @@ async function showHelp(slashCommand)
 
 
 /**
+* Handles the "/voice transfer" Subcommand
+* @param {ChatInputCommandInteraction} slashCommand 
+*/
+async function transferOwnership(slashCommand)
+{
+    // Check Command can be used
+    if ( await canCommandBeUsed(slashCommand) === false ) { return; }
+
+    // Bring in JSONs
+    const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
+    const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
+    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
+
+    // Fetch input
+    /** @type {GuildMember} */
+    const InputMember = slashCommand.options.getMember("member");
+    // Verify inputted User *is* a Member in the Guild
+    if ( !InputMember ) { return await slashCommand.reply({ ephemeral: true, content: `Sorry, but either that wasn't a valid Member from this Server, or an error occurred trying to find that Member.` }); }
+    // Ensure Voice Channel Owner doesn't choose themselves!
+    if ( InputMember.id === slashCommand.user.id ) { return await slashCommand.reply({ ephemeral: true, content: `You cannot use this Command on yourself!` }); }
+
+    // Verify Input Member doesn't already own a Temp VC
+    const CheckOwnedVCs = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === InputMember.id);
+    if ( CheckOwnedVCs.length > 0 ) { return await slashCommand.reply({ ephemeral: true, content: `You cannot transfer ownership of your Temp Voice Channel to <@${InputMember.id}> when they already own one! (They currently own <#${CheckOwnedVCs[0]["VOICE_CHANNEL_ID"]}> )` }); }
+
+    // Verify Input Member is in a Temp VC
+    await InputMember.fetch(); // Ensure updated Voice State
+    if ( InputMember.voice?.channelId == null ) { return await slashCommand.reply({ ephemeral: true, content: `You cannot transfer ownership of your Temp Voice Channel to someone who is *not* currently connected to a Temp Voice Channel.` }); }
+    if ( InputMember.voice.channel.parentId !== VoiceSettings[`${slashCommand.guildId}`]["PARENT_CATEGORY_ID"] ) { return await slashCommand.reply({ ephemeral: true, content: `You cannot transfer ownership of your Temp Voice Channel to someone who is *not* currently connected to a Temp Voice Channel.` }); }
+
+    // Claim Ownership
+    await slashCommand.deferReply();
+
+    const GrabVCJson = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.user.id);
+
+    const UpdatedJSONObject = GrabVCJson[0];
+    UpdatedJSONObject["CHANNEL_OWNER_ID"] = InputMember.id;
+    ActiveTempVoices[`${UpdatedJSONObject["VOICE_CHANNEL_ID"]}`] = UpdatedJSONObject;
+    fs.writeFile('./JsonFiles/hidden/activeTempVoices.json', JSON.stringify(ActiveTempVoices, null, 4), async (err) => {
+        if ( err ) { return await slashCommand.editReply({ content: `Sorry, something went wrong while claim Ownership of that VC... Please try again later` }); }
+    });
+
+    await slashCommand.editReply({ allowedMentions: { parse: [] }, content: `Transferred Ownership of the <#${UpdatedJSONObject["VOICE_CHANNEL_ID"]}> Temp Voice Channel to <@${InputMember.id}>!` });
+
+    return;
+}
+
+
+
+
+
+/**
 * Handles the "/voice claim" Subcommand
 * @param {ChatInputCommandInteraction} slashCommand 
 */
@@ -336,7 +388,7 @@ async function claimOwnership(slashCommand)
     if ( CheckOwnedVCs.length > 0 ) { return await slashCommand.reply({ ephemeral: true, content: `You cannot claim another Temp Voice Channel when you already own one! (You currently own <#${CheckOwnedVCs[0]["VOICE_CHANNEL_ID"]}> )` }); }
 
     // Verify Member is in a Temp VC
-    const CommandMember = await slashCommand.guild.members.fetch(slashCommand.user.id) // Ensure updated Voice State
+    const CommandMember = await slashCommand.guild.members.fetch(slashCommand.user.id); // Ensure updated Voice State
     if ( CommandMember.voice?.channelId == null ) { return await slashCommand.reply({ ephemeral: true, content: `You can only use this Command when connected to a Temp Voice Channel!` }); }
 
     // Grab VC
@@ -512,6 +564,7 @@ async function permitMember(slashCommand)
     const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.member.id);
 
     // Fetch input
+    /** @type {GuildMember} */
     const InputMember = slashCommand.options.getMember("member");
     // Verify inputted User *is* a Member in the Guild
     if ( !InputMember ) { return await slashCommand.reply({ ephemeral: true, content: `Sorry, but either that wasn't a valid Member from this Server, or an error occurred trying to find that Member.` }); }
