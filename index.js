@@ -238,6 +238,17 @@ DiscordClient.on("voiceStateUpdate", async (oldState, newState) => {
     if ( oldState.channelId != null && newState.channelId != null )
     {
         console.log(`Member ${newState.member?.displayName} SWAPPED from the Voice Channel ${oldState.channel?.name} TO ${newState.channel?.name}`);
+
+        // Check to see if previous VC was a Temp VC
+        if ( oldState.channel?.parentId === VoiceSettings[`${oldState.guild.id}`]["PARENT_CATEGORY_ID"] )
+        {
+            // IS a Temp VC, so now check if empty
+            if ( await TempVoiceChannelModule.isTempVoiceChannelEmpty(oldState) )
+            {
+                // Temp VC *is* empty, delete it
+                await TempVoiceChannelModule.deleteTempVoiceChannel(oldState);
+            }
+        }
         return;
     }
     
@@ -249,10 +260,10 @@ DiscordClient.on("voiceStateUpdate", async (oldState, newState) => {
     {
         console.log(`Member ${oldState.member?.displayName} LEFT the Voice Channel ${oldState.channel?.name}`);
 
-        // Do nothing if VC is not empty
+        // Do nothing if Temp VC is not empty
         if ( await TempVoiceChannelModule.isTempVoiceChannelEmpty(oldState) )
         {
-            // VC *is* empty, delete it
+            // Temp VC *is* empty, delete it
             await TempVoiceChannelModule.deleteTempVoiceChannel(oldState);
         }
         return;
