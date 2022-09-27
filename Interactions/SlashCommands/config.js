@@ -1,4 +1,4 @@
-const { ChatInputCommandInteraction, ChatInputApplicationCommandData, AutocompleteInteraction, ApplicationCommandType, PermissionFlagsBits, ApplicationCommandOptionType, ChannelType, Colors, EmbedBuilder, CategoryChannel } = require("discord.js");
+const { ChatInputCommandInteraction, ChatInputApplicationCommandData, AutocompleteInteraction, ApplicationCommandType, PermissionFlagsBits, ApplicationCommandOptionType, ChannelType, Colors, EmbedBuilder, CategoryChannel, TextChannel } = require("discord.js");
 const fs = require('fs');
 const { DiscordClient, Collections } = require("../../constants.js");
 const LocalizedErrors = require("../../JsonFiles/errorMessages.json");
@@ -72,7 +72,14 @@ module.exports = {
                         name: "parent-category",
                         description: "The Parent Category all Temp VCs will be made in",
                         channel_types: [ ChannelType.GuildCategory ],
-                        required: true
+                        required: false
+                    },
+                    {
+                        type: ApplicationCommandOptionType.Channel,
+                        name: "log-channel",
+                        description: "The Text Channel to log Temp VC Activity & Chats in",
+                        channel_types: [ ChannelType.GuildText ],
+                        required: false
                     }
                 ]
             }
@@ -152,49 +159,54 @@ async function editSettings(slashCommand)
     const GuildId = slashCommand.guildId;
     const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
     /** @type {CategoryChannel} */
-    const InputCategory = slashCommand.options.getChannel("parent-category", true);
-
-    // Ensure *something* was given
-    if ( InputCategory == null ) { return await slashCommand.reply({ ephemeral: true, content: `You didn't set any new Setting values! Please try using this Command again, ensuring at least one value is set.` }); }
-
-    // Update based on given Inputs
+    const InputCategory = slashCommand.options.getChannel("parent-category");
+    /** @type {TextChannel} */
+    const InputLogChannel = slashCommand.options.getChannel("log-channel");
+    
     const GuildSettings = VoiceSettings[`${GuildId}`];
-    let newSettings = {};
+    let newSettings = { "PARENT_CATEGORY_ID": null, "LOG_CHANNEL_ID": null };
 
-    if ( !GuildSettings )
+    // Ensure something was given
+    if ( InputCategory == null && InputLogChannel == null ) { return await slashCommand.reply({ ephemeral: true, content: `You didn't set any new Setting values! Please try using this Command again, ensuring at least one value is set.` }); }
+
+    // Grab current values if there are any
+    if ( GuildSettings ) { newSettings = GuildSettings };
+    let updatedSettingsString = ``;
+    
+    
+    // Category ID
+    if ( InputCategory != null )
     {
-        if ( InputCategory != null )
+        // Ensure Bot has Permissions to Manage Channels in that Category
+        /** @type {PermissionsBitField} */
+        const BotPermissions = InputCategory.permissionsFor(DiscordClient.user.id);
+        if ( !BotPermissions.has(PermissionFlagsBits.ViewChannel) || !BotPermissions.has(PermissionFlagsBits.ManageChannels) )
         {
-            // Ensure Bot has Permissions to Manage Channels in that Category
-            /** @type {PermissionsBitField} */
-            const BotPermissions = InputCategory.permissionsFor(DiscordClient.user.id);
-            if ( !BotPermissions.has(PermissionFlagsBits.ViewChannel) || !BotPermissions.has(PermissionFlagsBits.ManageChannels) )
-            {
-                return await slashCommand.reply({ ephemeral: true, content: `Sorry, but I cannot assign the **<#${InputCategory.id}>** Category as the Temp VC Category since I do not have either the "View Channel" and/or the "Manage Channels" Permissions for that Category.` });
-            }
+            return await slashCommand.reply({ ephemeral: true, content: `Sorry, but I cannot assign the **<#${InputCategory.id}>** Category as the Temp VC Category since I do not have either the "View Channel" and/or the "Manage Channels" Permissions for that Category.` });
         }
 
-        newSettings = {
-            "PARENT_CATEGORY_ID": InputCategory == null ? null : InputCategory.id
-        };
+        newSettings["PARENT_CATEGORY_ID"] = InputCategory == null ? null : InputCategory.id;
+        updatedSettingsString += `- Set Parent Category: <#${InputCategory.id}>`;
     }
-    else
+
+
+
+    // Logging Channel ID
+    if ( InputLogChannel != null )
     {
-        // Copy current
-        newSettings = GuildSettings;
-        // Update if changed
-        if ( InputCategory != null )
+        // Ensure Bot has Permissions to Send Messages & Attach Files in that Channel
+        /** @type {PermissionsBitField} */
+        const BotPermissions = InputLogChannel.permissionsFor(DiscordClient.user.id);
+        if ( !BotPermissions.has(PermissionFlagsBits.ViewChannel) || !BotPermissions.has(PermissionFlagsBits.SendMessages) || !BotPermissions.has(PermissionFlagsBits.AttachFiles) )
         {
-            // Ensure Bot has Permissions to send in that Channel
-            /** @type {PermissionsBitField} */
-            const BotPermissions = InputCategory.permissionsFor(DiscordClient.user.id);
-            if ( !BotPermissions.has(PermissionFlagsBits.ViewChannel) || !BotPermissions.has(PermissionFlagsBits.ManageChannels) )
-            {
-                return await slashCommand.reply({ ephemeral: true, content: `Sorry, but I cannot assign the **<#${InputCategory.id}>** Category as the Temp VC Category since I do not have either the "View Channel" and/or the "Manage Channels" Permissions for that Category.` });
-            }
-            else { newSettings["PARENT_CATEGORY_ID"] = InputCategory.id; }
+            return await slashCommand.reply({ ephemeral: true, content: `Sorry, but I cannot assign the **<#${InputLogChannel.id}>** Channel as the Logging Channel, since I do not have either the "View Channel", "Send Messages", and/or the "Attach Files" Permissions for that Channel.` });
         }
+
+        newSettings["LOG_CHANNEL_ID"] = InputLogChannel == null ? null : InputLogChannel.id;
+        updatedSettingsString += `${updatedSettingsString.length > 1 ? `\n` : ""}- Set Logging Channel: <#${InputLogChannel.id}>`;
     }
+
+    
 
     // Update saved Settings
     VoiceSettings[`${GuildId}`] = newSettings;
@@ -203,5 +215,5 @@ async function editSettings(slashCommand)
     });
 
     // Respond to User
-    return await slashCommand.reply({ ephemeral: true, content: `✅ Successfully updated your Temp VC Settings!` });
+    return await slashCommand.reply({ ephemeral: true, content: `✅ Successfully updated your Temp VC Settings!\n\n${updatedSettingsString}` });
 }
