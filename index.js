@@ -203,12 +203,15 @@ DiscordClient.on('interactionCreate', async (interaction) => {
 
 /******************************************************************************* */
 // DISCORD - VOICE STATE UPDATE EVENT
+const TempVoiceChannelModule = require('./BotModules/TempVoiceChannelModule.js');
+
 DiscordClient.on("voiceStateUpdate", async (oldState, newState) => {
     // Grab JSONs so we can ignore any Voice States NOT from Temp VCs
     const VoiceSettings = require('./JsonFiles/hidden/guildSettings.json');
     const ActiveTempVoices = require('./JsonFiles/hidden/activeTempVoices.json');
     const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
 
+    // Ignore Voice State Updates that do NOT come from a Temp VC
     if ( oldState.channel?.parentId !== VoiceSettings[`${oldState.guild.id}`]["PARENT_CATEGORY_ID"] && newState.channel?.parentId !== VoiceSettings[`${newState.guild.id}`]["PARENT_CATEGORY_ID"] )
     { 
         console.log("NOT A TEMP VC, RETURNED");
@@ -218,7 +221,7 @@ DiscordClient.on("voiceStateUpdate", async (oldState, newState) => {
 
 
 
-    // Member JOINED a VC (any)
+    // Member JOINED a Temp VC
     if ( oldState.channelId == null && newState.channelId != null )
     {
         console.log(`Member ${newState.member?.displayName} JOINED the Voice Channel ${newState.channel?.name}`);
@@ -228,7 +231,10 @@ DiscordClient.on("voiceStateUpdate", async (oldState, newState) => {
 
 
 
-    // Member SWAPPED BETWEEN VCs (any)
+    // Member SWAPPED BETWEEN VCs
+    //     Either from a Temp VC to any other VC,
+    //     OR from any other VC into a Temp VC,
+    //     OR from one Temp VC into another Temp VC
     if ( oldState.channelId != null && newState.channelId != null )
     {
         console.log(`Member ${newState.member?.displayName} SWAPPED from the Voice Channel ${oldState.channel?.name} TO ${newState.channel?.name}`);
@@ -238,10 +244,17 @@ DiscordClient.on("voiceStateUpdate", async (oldState, newState) => {
 
 
 
-    // Member LEFT a VC (any)
+    // Member LEFT a Temp VC
     if ( oldState.channelId != null && newState.channelId == null )
     {
         console.log(`Member ${oldState.member?.displayName} LEFT the Voice Channel ${oldState.channel?.name}`);
+
+        // Do nothing if VC is not empty
+        if ( await TempVoiceChannelModule.isTempVoiceChannelEmpty(oldState) )
+        {
+            // VC *is* empty, delete it
+            await TempVoiceChannelModule.deleteTempVoiceChannel(oldState);
+        }
         return;
     }
 
