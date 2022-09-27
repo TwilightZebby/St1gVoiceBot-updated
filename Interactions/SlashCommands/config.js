@@ -141,7 +141,8 @@ Please use the </config edit:${slashCommand.commandId}> Slash Command to set up 
     const SettingsEmbed = new EmbedBuilder().setColor(Colors.Aqua).setTitle(`Temp VC Settings for ${slashCommand.guild.name}`)
     .setDescription(`*Use </config edit:${slashCommand.commandId}> to edit them*`)
     .addFields(
-        { name: `Parent Category`, value: GuildSettings["PARENT_CATEGORY_ID"] == null ? `*Not set*` : `<#${GuildSettings["PARENT_CATEGORY_ID"]}>` }
+        { name: `Parent Category`, value: GuildSettings["PARENT_CATEGORY_ID"] == null ? `*Not set*` : `<#${GuildSettings["PARENT_CATEGORY_ID"]}>` },
+        { name: `Logging Channel`, value: GuildSettings["LOG_CHANNEL_ID"] == null ? `*Not set*` : `<#${GuildSettings["LOG_CHANNEL_ID"]}>` }
     );
 
     return await slashCommand.reply({ ephemeral: true, embeds: [SettingsEmbed] });

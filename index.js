@@ -202,5 +202,60 @@ DiscordClient.on('interactionCreate', async (interaction) => {
 
 
 /******************************************************************************* */
+// DISCORD - VOICE STATE UPDATE EVENT
+DiscordClient.on("voiceStateUpdate", async (oldState, newState) => {
+    // Grab JSONs so we can ignore any Voice States NOT from Temp VCs
+    const VoiceSettings = require('./JsonFiles/hidden/guildSettings.json');
+    const ActiveTempVoices = require('./JsonFiles/hidden/activeTempVoices.json');
+    const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
+
+    if ( oldState.channel?.parentId !== VoiceSettings[`${oldState.guild.id}`]["PARENT_CATEGORY_ID"] && newState.channel?.parentId !== VoiceSettings[`${newState.guild.id}`]["PARENT_CATEGORY_ID"] )
+    { 
+        console.log("NOT A TEMP VC, RETURNED");
+        return;
+    }
+
+
+
+
+    // Member JOINED a VC (any)
+    if ( oldState.channelId == null && newState.channelId != null )
+    {
+        console.log(`Member ${newState.member?.displayName} JOINED the Voice Channel ${newState.channel?.name}`);
+        return;
+    }
+    
+
+
+
+    // Member SWAPPED BETWEEN VCs (any)
+    if ( oldState.channelId != null && newState.channelId != null )
+    {
+        console.log(`Member ${newState.member?.displayName} SWAPPED from the Voice Channel ${oldState.channel?.name} TO ${newState.channel?.name}`);
+        return;
+    }
+    
+
+
+
+    // Member LEFT a VC (any)
+    if ( oldState.channelId != null && newState.channelId == null )
+    {
+        console.log(`Member ${oldState.member?.displayName} LEFT the Voice Channel ${oldState.channel?.name}`);
+        return;
+    }
+
+    console.log("THIS SHOULD NOT BE SEENED OUTPUTTED TO CONSOLE");
+    return;
+});
+
+
+
+
+
+
+
+
+/******************************************************************************* */
 
 DiscordClient.login(Config.TOKEN);
