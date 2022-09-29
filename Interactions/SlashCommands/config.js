@@ -24,7 +24,8 @@ module.exports = {
     //     IF SUBCOMMAND GROUP: name as "subcommandGroupName_subcommandName"
     SubcommandCooldown: {
         "edit": 30,
-        "view": 20
+        "view": 20,
+        "log": 30
     },
 
     // Scope of Command's usage
@@ -37,7 +38,8 @@ module.exports = {
     //     IF SUBCOMMAND GROUP: name as "subcommandGroupName_subcommandName"
     SubcommandScope: {
         "edit": "GUILD",
-        "view": "GUILD"
+        "view": "GUILD",
+        "log": "GUILD"
     },
 
 
@@ -82,6 +84,55 @@ module.exports = {
                         required: false
                     }
                 ]
+            },
+            {
+                type: ApplicationCommandOptionType.Subcommand,
+                name: "log",
+                description: "Enable or Disable specific Temp VC logs for this Server",
+                options: [
+                    {
+                        type: ApplicationCommandOptionType.Boolean,
+                        name: "text-chat",
+                        description: "Log a transcript of the Temp VC's Text Chat upon VC deletion",
+                        required: false
+                    },
+                    {
+                        type: ApplicationCommandOptionType.Boolean,
+                        name: "rename",
+                        description: "Log when Temp VCs are renamed",
+                        required: false
+                    },
+                    {
+                        type: ApplicationCommandOptionType.Boolean,
+                        name: "limit",
+                        description: "Log when a Temp VC's User Limit has been changed",
+                        required: false
+                    },
+                    {
+                        type: ApplicationCommandOptionType.Boolean,
+                        name: "permit-reject",
+                        description: "Log when a Member has been permitted to or rejected from a Temp VC",
+                        required: false
+                    },
+                    {
+                        type: ApplicationCommandOptionType.Boolean,
+                        name: "vanish-status",
+                        description: "Log when a Temp VC has been vanished or unvanished",
+                        required: false
+                    },
+                    {
+                        type: ApplicationCommandOptionType.Boolean,
+                        name: "lock-status",
+                        description: "Log when a Temp VC has been locked or unlocked",
+                        required: false
+                    },
+                    {
+                        type: ApplicationCommandOptionType.Boolean,
+                        name: "owner-status",
+                        description: "Log when a Temp VC's owner has changed due to a claim or transfer",
+                        required: false
+                    }
+                ]
             }
         ]
 
@@ -105,6 +156,9 @@ module.exports = {
 
             case "edit":
                 return await editSettings(slashCommand);
+
+            case "log":
+                return await loggingSettings(slashCommand);
         }
     },
 
@@ -118,6 +172,92 @@ module.exports = {
     {
         //.
     }
+}
+
+
+
+/**
+* Handles the "/config log" Subcommand
+* @param {ChatInputCommandInteraction} slashCommand 
+*/
+async function loggingSettings(slashCommand)
+{
+    // Grab JSON
+    const GuildId = slashCommand.guildId;
+    const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
+    const GuildSettings = VoiceSettings[`${GuildId}`];
+
+    // Grab Inputs (if they exist)
+    const InputTextChat = slashCommand.options.getBoolean("text-chat");
+    const InputRename = slashCommand.options.getBoolean("rename");
+    const InputLimit = slashCommand.options.getBoolean("limit");
+    const InputPermitReject = slashCommand.options.getBoolean("permit-reject");
+    const InputVanishStatus = slashCommand.options.getBoolean("vanish-status");
+    const InputLockStatus = slashCommand.options.getBoolean("lock-status");
+    const InputOwnerStatus = slashCommand.options.getBoolean("owner-status");
+
+    // Ensure something was given
+    if ( InputTextChat == null && InputRename == null && InputLimit == null && InputPermitReject == null && InputVanishStatus == null && InputLockStatus == null && InputOwnerStatus == null )
+    { return await slashCommand.reply({ ephemeral: true, content: `You didn't set any new Log Setting values! Please try using this Command again, ensuring at least one value is set.` }); }
+
+    // Grab current copy of Guild Temp VC Settings, if they exist
+    let newSettings = { "PARENT_CATEGORY_ID": null, "LOG_CHANNEL_ID": null, "LOGGING": { "TEXT_CHAT": false, "RENAME": false, "LIMIT": false, "PERMIT_REJECT": false, "VANISH_STATUS": false, "LOCK_STATUS": false, "OWNER_STATUS": false } };
+    if ( GuildSettings ) { newSettings = GuildSettings };
+    let updatedSettingsString = ``;
+
+
+    // Update Log Settings
+    if ( InputTextChat != null )
+    {
+        newSettings["LOGGING"]["TEXT_CHAT"] = InputTextChat;
+        updatedSettingsString += `- ${InputTextChat ? `Enabled` : `Disabled`} Text Chat Logs`;
+    }
+
+    if ( InputRename != null )
+    {
+        newSettings["LOGGING"]["RENAME"] = InputRename;
+        updatedSettingsString += `${updatedSettingsString.length > 0 ? `\n` : ""}- ${InputRename ? `Enabled` : `Disabled`} Rename Logs`;
+    }
+
+    if ( InputLimit != null )
+    {
+        newSettings["LOGGING"]["LIMIT"] = InputLimit;
+        updatedSettingsString += `${updatedSettingsString.length > 0 ? `\n` : ""}- ${InputLimit ? `Enabled` : `Disabled`} Member Limit Logs`;
+    }
+
+    if ( InputPermitReject != null )
+    {
+        newSettings["LOGGING"]["PERMIT_REJECT"] = InputPermitReject;
+        updatedSettingsString += `${updatedSettingsString.length > 0 ? `\n` : ""}- ${InputPermitReject ? `Enabled` : `Disabled`} Member Permitted/Rejected Logs`;
+    }
+
+    if ( InputVanishStatus != null )
+    {
+        newSettings["LOGGING"]["VANISH_STATUS"] = InputVanishStatus;
+        updatedSettingsString += `${updatedSettingsString.length > 0 ? `\n` : ""}- ${InputVanishStatus ? `Enabled` : `Disabled`} Vanish Status Logs`;
+    }
+
+    if ( InputLockStatus != null )
+    {
+        newSettings["LOGGING"]["LOCK_STATUS"] = InputLockStatus;
+        updatedSettingsString += `${updatedSettingsString.length > 0 ? `\n` : ""}- ${InputLockStatus ? `Enabled` : `Disabled`} Lock Status Logs`;
+    }
+
+    if ( InputOwnerStatus != null )
+    {
+        newSettings["LOGGING"]["OWNER_STATUS"] = InputOwnerStatus;
+        updatedSettingsString += `${updatedSettingsString.length > 0 ? `\n` : ""}- ${InputOwnerStatus ? `Enabled` : `Disabled`} Owner Status Logs`;
+    }
+
+
+    // Update saved Settings
+    VoiceSettings[`${GuildId}`] = newSettings;
+    fs.writeFile('./JsonFiles/hidden/guildSettings.json', JSON.stringify(VoiceSettings, null, 4), async (err) => {
+        if ( err ) { return await slashCommand.reply({ ephemeral: true, content: `Sorry, something went wrong while trying to save your updated Temp VC Log Settings... Please try again later` }); }
+    });
+
+    // Respond to User
+    return await slashCommand.reply({ ephemeral: true, content: `✅ Successfully updated your Temp VC Log Settings!\n\n${updatedSettingsString}` });
 }
 
 
@@ -139,10 +279,11 @@ Please use the </config edit:${slashCommand.commandId}> Slash Command to set up 
 
     // Settings are found for Guild, construct into Embed and display
     const SettingsEmbed = new EmbedBuilder().setColor(Colors.Aqua).setTitle(`Temp VC Settings for ${slashCommand.guild.name}`)
-    .setDescription(`*Use </config edit:${slashCommand.commandId}> to edit them*`)
+    .setDescription(`*Use </config edit:${slashCommand.commandId}> or </config log:${slashCommand.commandId}> to edit them*`)
     .addFields(
         { name: `Parent Category`, value: GuildSettings["PARENT_CATEGORY_ID"] == null ? `*Not set*` : `<#${GuildSettings["PARENT_CATEGORY_ID"]}>` },
-        { name: `Logging Channel`, value: GuildSettings["LOG_CHANNEL_ID"] == null ? `*Not set*` : `<#${GuildSettings["LOG_CHANNEL_ID"]}>` }
+        { name: `Logging Channel`, value: GuildSettings["LOG_CHANNEL_ID"] == null ? `*Not set*` : `<#${GuildSettings["LOG_CHANNEL_ID"]}>` },
+        { name: `Temp VC Logging`, value: `✅ Temp VC Creation/Deletion *(Always enabled by default)*\n${GuildSettings["LOGGING"]["TEXT_CHAT"] ? `✅` : `❌`} Text Chat Log\n${GuildSettings["LOGGING"]["RENAME"] ? `✅` : `❌`} Rename Log\n${GuildSettings["LOGGING"]["LIMIT"] ? `✅` : `❌`} Member Limit Log\n${GuildSettings["LOGGING"]["PERMIT_REJECT"] ? `✅` : `❌`} Member Permitted/Rejected Log\n${GuildSettings["LOGGING"]["VANISH_STATUS"] ? `✅` : `❌`} Vanish Status Log\n${GuildSettings["LOGGING"]["LOCK_STATUS"] ? `✅` : `❌`} Lock Status Log\n${GuildSettings["LOGGING"]["OWNER_STATUS"] ? `✅` : `❌`} Owner Status Log` }
     );
 
     return await slashCommand.reply({ ephemeral: true, embeds: [SettingsEmbed] });
@@ -165,7 +306,7 @@ async function editSettings(slashCommand)
     const InputLogChannel = slashCommand.options.getChannel("log-channel");
     
     const GuildSettings = VoiceSettings[`${GuildId}`];
-    let newSettings = { "PARENT_CATEGORY_ID": null, "LOG_CHANNEL_ID": null };
+    let newSettings = { "PARENT_CATEGORY_ID": null, "LOG_CHANNEL_ID": null, "LOGGING": { "TEXT_CHAT": false, "RENAME": false, "LIMIT": false, "PERMIT_REJECT": false, "VANISH_STATUS": false, "LOCK_STATUS": false, "OWNER_STATUS": false } };
 
     // Ensure something was given
     if ( InputCategory == null && InputLogChannel == null ) { return await slashCommand.reply({ ephemeral: true, content: `You didn't set any new Setting values! Please try using this Command again, ensuring at least one value is set.` }); }
