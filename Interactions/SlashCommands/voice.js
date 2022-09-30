@@ -429,6 +429,7 @@ async function unvanishTempVoice(slashCommand)
     if ( await canCommandBeUsed(slashCommand) === false ) { return; }
 
     // Bring in JSONs
+    const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
     const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
 
     // Grab VC
@@ -440,7 +441,7 @@ async function unvanishTempVoice(slashCommand)
 
     /** @type {VoiceChannel} */
     const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
-    await FetchedVoiceChannel.permissionOverwrites.edit(slashCommand.guildId, { ViewChannel: null })
+    await FetchedVoiceChannel.permissionOverwrites.edit(VoiceSettings[`${slashCommand.guildId}`]["BASE_ROLE_ID"], { ViewChannel: null })
     .then(async () => { await slashCommand.editReply({ content: `Unvanished your Temp Voice Channel!\nYou can vanish/hide it again using </voice vanish:${slashCommand.commandId}>` }); })
     .catch(async (err) => {
         //console.error(err);
@@ -464,6 +465,7 @@ async function vanishTempVoice(slashCommand)
     if ( await canCommandBeUsed(slashCommand) === false ) { return; }
 
     // Bring in JSONs
+    const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
     const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
 
     // Grab VC
@@ -475,7 +477,7 @@ async function vanishTempVoice(slashCommand)
 
     /** @type {VoiceChannel} */
     const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
-    await FetchedVoiceChannel.permissionOverwrites.edit(slashCommand.guildId, { ViewChannel: false })
+    await FetchedVoiceChannel.permissionOverwrites.edit(VoiceSettings[`${slashCommand.guildId}`]["BASE_ROLE_ID"], { ViewChannel: false })
     .then(async () => { await slashCommand.editReply({ content: `Vanished your Temp Voice Channel!\nYou can unvanish/reveal it again using </voice unvanish:${slashCommand.commandId}>` }); })
     .catch(async (err) => {
         //console.error(err);
@@ -676,6 +678,7 @@ async function lockTempVoice(slashCommand)
     if ( await canCommandBeUsed(slashCommand) === false ) { return; }
 
     // Bring in JSONs
+    const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
     const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
 
     // Grab VC
@@ -687,7 +690,7 @@ async function lockTempVoice(slashCommand)
 
     /** @type {VoiceChannel} */
     const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
-    await FetchedVoiceChannel.permissionOverwrites.edit(slashCommand.guildId, { Connect: false })
+    await FetchedVoiceChannel.permissionOverwrites.edit(VoiceSettings[`${slashCommand.guildId}`]["BASE_ROLE_ID"], { Connect: false })
     .then(async () => { await slashCommand.editReply({ content: `Locked Temp Voice Channel!` }); })
     .catch(async (err) => {
         //console.error(err);
@@ -711,6 +714,7 @@ async function unlockTempVoice(slashCommand)
     if ( await canCommandBeUsed(slashCommand) === false ) { return; }
 
     // Bring in JSONs
+    const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
     const ActiveTempVoices = require('../../JsonFiles/hidden/activeTempVoices.json');
 
     // Grab VC
@@ -722,7 +726,7 @@ async function unlockTempVoice(slashCommand)
 
     /** @type {VoiceChannel} */
     const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
-    await FetchedVoiceChannel.permissionOverwrites.edit(slashCommand.guildId, { Connect: true })
+    await FetchedVoiceChannel.permissionOverwrites.edit(VoiceSettings[`${slashCommand.guildId}`]["BASE_ROLE_ID"], { Connect: true })
     .then(async () => { await slashCommand.editReply({ content: `Unlocked Temp Voice Channel!` }); })
     .catch(async (err) => {
         //console.error(err);

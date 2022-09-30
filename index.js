@@ -214,7 +214,7 @@ DiscordClient.on("voiceStateUpdate", async (oldState, newState) => {
     // Ignore Voice State Updates that do NOT come from a Temp VC
     if ( oldState.channel?.parentId !== VoiceSettings[`${oldState.guild.id}`]["PARENT_CATEGORY_ID"] && newState.channel?.parentId !== VoiceSettings[`${newState.guild.id}`]["PARENT_CATEGORY_ID"] )
     { 
-        console.log("NOT A TEMP VC, RETURNED");
+        //console.log("NOT A TEMP VC, RETURNED");
         return;
     }
 
@@ -224,7 +224,7 @@ DiscordClient.on("voiceStateUpdate", async (oldState, newState) => {
     // Member JOINED a Temp VC
     if ( oldState.channelId == null && newState.channelId != null )
     {
-        console.log(`Member ${newState.member?.displayName} JOINED the Voice Channel ${newState.channel?.name}`);
+        //console.log(`Member ${newState.member?.displayName} JOINED the Voice Channel ${newState.channel?.name}`);
         return;
     }
     
@@ -237,7 +237,7 @@ DiscordClient.on("voiceStateUpdate", async (oldState, newState) => {
     //     OR from one Temp VC into another Temp VC
     if ( oldState.channelId != null && newState.channelId != null )
     {
-        console.log(`Member ${newState.member?.displayName} SWAPPED from the Voice Channel ${oldState.channel?.name} TO ${newState.channel?.name}`);
+        //console.log(`Member ${newState.member?.displayName} SWAPPED from the Voice Channel ${oldState.channel?.name} TO ${newState.channel?.name}`);
 
         // Check to see if previous VC was a Temp VC
         if ( oldState.channel?.parentId === VoiceSettings[`${oldState.guild.id}`]["PARENT_CATEGORY_ID"] )
@@ -258,7 +258,7 @@ DiscordClient.on("voiceStateUpdate", async (oldState, newState) => {
     // Member LEFT a Temp VC
     if ( oldState.channelId != null && newState.channelId == null )
     {
-        console.log(`Member ${oldState.member?.displayName} LEFT the Voice Channel ${oldState.channel?.name}`);
+        //console.log(`Member ${oldState.member?.displayName} LEFT the Voice Channel ${oldState.channel?.name}`);
 
         // Do nothing if Temp VC is not empty
         if ( await TempVoiceChannelModule.isTempVoiceChannelEmpty(oldState) )
@@ -269,7 +269,7 @@ DiscordClient.on("voiceStateUpdate", async (oldState, newState) => {
         return;
     }
 
-    console.log("THIS SHOULD NOT BE SEENED OUTPUTTED TO CONSOLE");
+    //console.log("THIS SHOULD NOT BE SEENED OUTPUTTED TO CONSOLE");
     return;
 });
 

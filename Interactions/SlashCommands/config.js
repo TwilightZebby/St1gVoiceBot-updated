@@ -82,6 +82,12 @@ module.exports = {
                         description: "The Text Channel to log Temp VC Activity & Chats in",
                         channel_types: [ ChannelType.GuildText ],
                         required: false
+                    },
+                    {
+                        type: ApplicationCommandOptionType.Role,
+                        name: "default-role",
+                        description: "Base Role for Temp VC Permissions (Default: @everyone)",
+                        required: false
                     }
                 ]
             },
@@ -201,7 +207,7 @@ async function loggingSettings(slashCommand)
     { return await slashCommand.reply({ ephemeral: true, content: `You didn't set any new Log Setting values! Please try using this Command again, ensuring at least one value is set.` }); }
 
     // Grab current copy of Guild Temp VC Settings, if they exist
-    let newSettings = { "PARENT_CATEGORY_ID": null, "LOG_CHANNEL_ID": null, "LOGGING": { "TEXT_CHAT": false, "RENAME": false, "LIMIT": false, "PERMIT_REJECT": false, "VANISH_STATUS": false, "LOCK_STATUS": false, "OWNER_STATUS": false } };
+    let newSettings = { "PARENT_CATEGORY_ID": null, "LOG_CHANNEL_ID": null, "BASE_ROLE_ID": "everyone", "LOGGING": { "TEXT_CHAT": false, "RENAME": false, "LIMIT": false, "PERMIT_REJECT": false, "VANISH_STATUS": false, "LOCK_STATUS": false, "OWNER_STATUS": false } };
     if ( GuildSettings ) { newSettings = GuildSettings };
     let updatedSettingsString = ``;
 
@@ -281,7 +287,8 @@ Please use the </config edit:${slashCommand.commandId}> Slash Command to set up 
     const SettingsEmbed = new EmbedBuilder().setColor(Colors.Aqua).setTitle(`Temp VC Settings for ${slashCommand.guild.name}`)
     .setDescription(`*Use </config edit:${slashCommand.commandId}> or </config log:${slashCommand.commandId}> to edit them*`)
     .addFields(
-        { name: `Parent Category`, value: GuildSettings["PARENT_CATEGORY_ID"] == null ? `*Not set*` : `<#${GuildSettings["PARENT_CATEGORY_ID"]}>` },
+        { name: `Parent Category`, value: GuildSettings["PARENT_CATEGORY_ID"] == null ? `*Not set*` : `<#${GuildSettings["PARENT_CATEGORY_ID"]}>`, inline: true },
+        { name: `Base Role`, value: GuildSettings["BASE_ROLE_ID"] === "everyone" ? `@everyone` : `<@${GuildSettings["BASE_ROLE_ID"]}>`, inline: true },
         { name: `Logging Channel`, value: GuildSettings["LOG_CHANNEL_ID"] == null ? `*Not set*` : `<#${GuildSettings["LOG_CHANNEL_ID"]}>` },
         { name: `Temp VC Logging`, value: `✅ Temp VC Creation/Deletion *(Always enabled by default)*\n${GuildSettings["LOGGING"]["TEXT_CHAT"] ? `✅` : `❌`} Text Chat Log\n${GuildSettings["LOGGING"]["RENAME"] ? `✅` : `❌`} Rename Log\n${GuildSettings["LOGGING"]["LIMIT"] ? `✅` : `❌`} Member Limit Log\n${GuildSettings["LOGGING"]["PERMIT_REJECT"] ? `✅` : `❌`} Member Permitted/Rejected Log\n${GuildSettings["LOGGING"]["VANISH_STATUS"] ? `✅` : `❌`} Vanish Status Log\n${GuildSettings["LOGGING"]["LOCK_STATUS"] ? `✅` : `❌`} Lock Status Log\n${GuildSettings["LOGGING"]["OWNER_STATUS"] ? `✅` : `❌`} Owner Status Log` }
     );
@@ -304,12 +311,14 @@ async function editSettings(slashCommand)
     const InputCategory = slashCommand.options.getChannel("parent-category");
     /** @type {TextChannel} */
     const InputLogChannel = slashCommand.options.getChannel("log-channel");
+    const InputBaseRole = slashCommand.options.getRole("default-role");
     
     const GuildSettings = VoiceSettings[`${GuildId}`];
-    let newSettings = { "PARENT_CATEGORY_ID": null, "LOG_CHANNEL_ID": null, "LOGGING": { "TEXT_CHAT": false, "RENAME": false, "LIMIT": false, "PERMIT_REJECT": false, "VANISH_STATUS": false, "LOCK_STATUS": false, "OWNER_STATUS": false } };
+    let newSettings = { "PARENT_CATEGORY_ID": null, "LOG_CHANNEL_ID": null, "BASE_ROLE_ID": "everyone", "LOGGING": { "TEXT_CHAT": false, "RENAME": false, "LIMIT": false, "PERMIT_REJECT": false, "VANISH_STATUS": false, "LOCK_STATUS": false, "OWNER_STATUS": false } };
 
     // Ensure something was given
-    if ( InputCategory == null && InputLogChannel == null ) { return await slashCommand.reply({ ephemeral: true, content: `You didn't set any new Setting values! Please try using this Command again, ensuring at least one value is set.` }); }
+    if ( InputCategory == null && InputLogChannel == null && InputBaseRole == null )
+    { return await slashCommand.reply({ ephemeral: true, content: `You didn't set any new Setting values! Please try using this Command again, ensuring at least one value is set.` }); }
 
     // Grab current values if there are any
     if ( GuildSettings ) { newSettings = GuildSettings };
@@ -348,6 +357,25 @@ async function editSettings(slashCommand)
         updatedSettingsString += `${updatedSettingsString.length > 1 ? `\n` : ""}- Set Logging Channel: <#${InputLogChannel.id}>`;
     }
 
+
+
+    // Base Role
+    if ( InputBaseRole != null )
+    {
+        newSettings["BASE_ROLE_ID"] = `${InputBaseRole.id}`;
+
+        // Special case for @everyone
+        if ( InputBaseRole.id === slashCommand.guildId )
+        {
+            updatedSettingsString += `${updatedSettingsString.length > 1 ? `\n` : ""}- Set Base Role: @everyone`;
+        }
+        // Other Roles
+        else
+        {
+            updatedSettingsString += `${updatedSettingsString.length > 1 ? `\n` : ""}- Set Base Role: <@&${InputBaseRole.id}>`;
+        }
+    }
+
     
 
     // Update saved Settings
@@ -357,5 +385,5 @@ async function editSettings(slashCommand)
     });
 
     // Respond to User
-    return await slashCommand.reply({ ephemeral: true, content: `✅ Successfully updated your Temp VC Settings!\n\n${updatedSettingsString}` });
+    return await slashCommand.reply({ ephemeral: true, allowedMentions: { parse: [] }, content: `✅ Successfully updated your Temp VC Settings!\n\n${updatedSettingsString}` });
 }
