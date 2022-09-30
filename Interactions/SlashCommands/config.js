@@ -288,7 +288,7 @@ Please use the </config edit:${slashCommand.commandId}> Slash Command to set up 
     .setDescription(`*Use </config edit:${slashCommand.commandId}> or </config log:${slashCommand.commandId}> to edit them*`)
     .addFields(
         { name: `Parent Category`, value: GuildSettings["PARENT_CATEGORY_ID"] == null ? `*Not set*` : `<#${GuildSettings["PARENT_CATEGORY_ID"]}>`, inline: true },
-        { name: `Base Role`, value: GuildSettings["BASE_ROLE_ID"] === "everyone" ? `@everyone` : `<@${GuildSettings["BASE_ROLE_ID"]}>`, inline: true },
+        { name: `Base Role`, value: GuildSettings["BASE_ROLE_ID"] === "everyone" ? `@everyone` : `<@&${GuildSettings["BASE_ROLE_ID"]}>`, inline: true },
         { name: `Logging Channel`, value: GuildSettings["LOG_CHANNEL_ID"] == null ? `*Not set*` : `<#${GuildSettings["LOG_CHANNEL_ID"]}>` },
         { name: `Temp VC Logging`, value: `✅ Temp VC Creation/Deletion *(Always enabled by default)*\n${GuildSettings["LOGGING"]["TEXT_CHAT"] ? `✅` : `❌`} Text Chat Log\n${GuildSettings["LOGGING"]["RENAME"] ? `✅` : `❌`} Rename Log\n${GuildSettings["LOGGING"]["LIMIT"] ? `✅` : `❌`} Member Limit Log\n${GuildSettings["LOGGING"]["PERMIT_REJECT"] ? `✅` : `❌`} Member Permitted/Rejected Log\n${GuildSettings["LOGGING"]["VANISH_STATUS"] ? `✅` : `❌`} Vanish Status Log\n${GuildSettings["LOGGING"]["LOCK_STATUS"] ? `✅` : `❌`} Lock Status Log\n${GuildSettings["LOGGING"]["OWNER_STATUS"] ? `✅` : `❌`} Owner Status Log` }
     );
