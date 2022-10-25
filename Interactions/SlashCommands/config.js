@@ -1,4 +1,4 @@
-const { ChatInputCommandInteraction, ChatInputApplicationCommandData, AutocompleteInteraction, ApplicationCommandType, PermissionFlagsBits, ApplicationCommandOptionType, ChannelType, Colors, EmbedBuilder, CategoryChannel, TextChannel } = require("discord.js");
+const { ChatInputCommandInteraction, ChatInputApplicationCommandData, AutocompleteInteraction, ApplicationCommandType, PermissionFlagsBits, ApplicationCommandOptionType, ChannelType, Colors, EmbedBuilder, CategoryChannel, TextChannel, VoiceChannel } = require("discord.js");
 const fs = require('fs');
 const { DiscordClient } = require("../../constants.js");
 const LocalizedErrors = require("../../JsonFiles/errorMessages.json");
@@ -74,6 +74,13 @@ module.exports = {
                         name: "parent-category",
                         description: "The Parent Category all Temp VCs will be made in",
                         channel_types: [ ChannelType.GuildCategory ],
+                        required: false
+                    },
+                    {
+                        type: ApplicationCommandOptionType.Channel,
+                        name: "source-vc",
+                        description: "Voice Channels Members can join to create Temp VCs",
+                        channel_types: [ ChannelType.GuildVoice ],
                         required: false
                     },
                     {
@@ -288,8 +295,9 @@ Please use the </config edit:${slashCommand.commandId}> Slash Command to set up 
     .setDescription(`*Use </config edit:${slashCommand.commandId}> or </config log:${slashCommand.commandId}> to edit them*`)
     .addFields(
         { name: `Parent Category`, value: GuildSettings["PARENT_CATEGORY_ID"] == null ? `*Not set*` : `<#${GuildSettings["PARENT_CATEGORY_ID"]}>`, inline: true },
+        { name: `Source VC`, value: GuildSettings["SOURCE_VC_ID"] == null ? `*Not set*` : `<#${GuildSettings["SOURCE_VC_ID"]}>`, inline: true },
         { name: `Base Role`, value: GuildSettings["BASE_ROLE_ID"] === "everyone" ? `@everyone` : `<@&${GuildSettings["BASE_ROLE_ID"]}>`, inline: true },
-        { name: `Logging Channel`, value: GuildSettings["LOG_CHANNEL_ID"] == null ? `*Not set*` : `<#${GuildSettings["LOG_CHANNEL_ID"]}>` },
+        { name: `Logging Channel`, value: GuildSettings["LOG_CHANNEL_ID"] == null ? `*Not set*` : `<#${GuildSettings["LOG_CHANNEL_ID"]}>`, inline: true },
         { name: `Temp VC Logging`, value: `✅ Temp VC Creation/Deletion *(Always enabled by default)*\n${GuildSettings["LOGGING"]["TEXT_CHAT"] ? `✅` : `❌`} Text Chat Log\n${GuildSettings["LOGGING"]["RENAME"] ? `✅` : `❌`} Rename Log\n${GuildSettings["LOGGING"]["LIMIT"] ? `✅` : `❌`} Member Limit Log\n${GuildSettings["LOGGING"]["PERMIT_REJECT"] ? `✅` : `❌`} Member Permitted/Rejected Log\n${GuildSettings["LOGGING"]["VANISH_STATUS"] ? `✅` : `❌`} Vanish Status Log\n${GuildSettings["LOGGING"]["LOCK_STATUS"] ? `✅` : `❌`} Lock Status Log\n${GuildSettings["LOGGING"]["OWNER_STATUS"] ? `✅` : `❌`} Owner Status Log` }
     );
 
@@ -309,15 +317,17 @@ async function editSettings(slashCommand)
     const VoiceSettings = require('../../JsonFiles/hidden/guildSettings.json');
     /** @type {CategoryChannel} */
     const InputCategory = slashCommand.options.getChannel("parent-category");
+    /** @type {VoiceChannel} */
+    const InputSourceVC = slashCommand.options.getChannel("source-vc");
     /** @type {TextChannel} */
     const InputLogChannel = slashCommand.options.getChannel("log-channel");
     const InputBaseRole = slashCommand.options.getRole("default-role");
     
     const GuildSettings = VoiceSettings[`${GuildId}`];
-    let newSettings = { "PARENT_CATEGORY_ID": null, "LOG_CHANNEL_ID": null, "BASE_ROLE_ID": "everyone", "LOGGING": { "TEXT_CHAT": false, "RENAME": false, "LIMIT": false, "PERMIT_REJECT": false, "VANISH_STATUS": false, "LOCK_STATUS": false, "OWNER_STATUS": false } };
+    let newSettings = { "PARENT_CATEGORY_ID": null, "SOURCE_VC_ID": null, "LOG_CHANNEL_ID": null, "BASE_ROLE_ID": "everyone", "LOGGING": { "TEXT_CHAT": false, "RENAME": false, "LIMIT": false, "PERMIT_REJECT": false, "VANISH_STATUS": false, "LOCK_STATUS": false, "OWNER_STATUS": false } };
 
     // Ensure something was given
-    if ( InputCategory == null && InputLogChannel == null && InputBaseRole == null )
+    if ( InputCategory == null && InputSourceVC == null && InputLogChannel == null && InputBaseRole == null )
     { return await slashCommand.reply({ ephemeral: true, content: `You didn't set any new Setting values! Please try using this Command again, ensuring at least one value is set.` }); }
 
     // Grab current values if there are any
@@ -338,6 +348,23 @@ async function editSettings(slashCommand)
 
         newSettings["PARENT_CATEGORY_ID"] = InputCategory == null ? null : InputCategory.id;
         updatedSettingsString += `- Set Parent Category: <#${InputCategory.id}>`;
+    }
+
+
+
+    // Source VC ID
+    if ( InputSourceVC != null )
+    {
+        // Ensure Bot has Permissions to Move Members between VCs
+        /** @type {PermissionsBitField} */
+        const BotPermissions = InputSourceVC.permissionsFor(DiscordClient.user.id);
+        if ( !BotPermissions.has(PermissionFlagsBits.MoveMembers) )
+        {
+            return await slashCommand.reply({ ephemeral: true, content: `Sorry, but I cannot assign the **<#${InputSourceVC.id}>** Voice Channel as the Source VC since I do not have the "Move Members" Permission in that Voice Channel.` });
+        }
+
+        newSettings["SOURCE_VC_ID"] = InputSourceVC == null ? null : InputSourceVC.id;
+        updatedSettingsString += `- Set Source VC: <#${InputSourceVC.id}>`;
     }
 
 

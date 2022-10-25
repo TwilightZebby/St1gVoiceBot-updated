@@ -23,7 +23,7 @@ module.exports = {
     //     IF SUBCOMMAND: name as "subcommandName"
     //     IF SUBCOMMAND GROUP: name as "subcommandGroupName_subcommandName"
     SubcommandCooldown: {
-        "create": 120,
+        /* "create": 120, */
         "help": 30,
         "unlock": 30,
         "lock": 30,
@@ -46,7 +46,7 @@ module.exports = {
     //     IF SUBCOMMAND: name as "subcommandName"
     //     IF SUBCOMMAND GROUP: name as "subcommandGroupName_subcommandName"
     SubcommandScope: {
-        "create": "GUILD",
+        /* "create": "GUILD", */
         "help": "GUILD",
         "unlock": "GUILD",
         "lock": "GUILD",
@@ -76,11 +76,11 @@ module.exports = {
         Data.type = ApplicationCommandType.ChatInput;
         Data.dmPermission = false;
         Data.options = [
-            {
+            /* {
                 type: ApplicationCommandOptionType.Subcommand,
                 name: "create",
                 description: "Create a new Temp Voice Channel"
-            },
+            }, */
             {
                 type: ApplicationCommandOptionType.Subcommand,
                 name: "help",
@@ -187,8 +187,8 @@ module.exports = {
         const SubcommandUsed = slashCommand.options.getSubcommand(true);
         switch (SubcommandUsed)
         {
-            case "create":
-                return await createTempVoice(slashCommand);
+            /* case "create":
+                return await createTempVoice(slashCommand); */
 
             case "help":
                 return await showHelp(slashCommand);

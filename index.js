@@ -1,6 +1,5 @@
-const { RateLimitError, DMChannel } = require("discord.js");
+const { RateLimitError, DMChannel, CategoryChannel, PermissionsBitField, PermissionFlagsBits, ChannelType } = require("discord.js");
 const fs = require("fs");
-
 const { DiscordClient, Collections } = require("./constants.js");
 const Config = require("./config.js");
 
@@ -211,10 +210,102 @@ DiscordClient.on("voiceStateUpdate", async (oldState, newState) => {
     const ActiveTempVoices = require('./JsonFiles/hidden/activeTempVoices.json');
     const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
 
-    // Ignore Voice State Updates that do NOT come from a Temp VC
+    // Check Guild actually has settings set
+    if ( ( oldState.channelId == null || !VoiceSettings[oldState.guild.id] ) && ( newState.channelId == null || !VoiceSettings[newState.guild.id] ) )
+    {
+        //console.log("NO SETTINGS SET");
+        return;
+    }
+
+    // Voice State Updates that do NOT come from a Temp VC
     if ( oldState.channel?.parentId !== VoiceSettings[`${oldState.guild.id}`]["PARENT_CATEGORY_ID"] && newState.channel?.parentId !== VoiceSettings[`${newState.guild.id}`]["PARENT_CATEGORY_ID"] )
     { 
-        //console.log("NOT A TEMP VC, RETURNED");
+        //console.log("NOT A TEMP VC");
+
+        // Check if this is a Member joining the Source VC
+        if ( oldState.channelId == null && newState.channelId === VoiceSettings[`${newState.guild.id}`]["SOURCE_VC_ID"] )
+        {
+            //console.log("IS SOURCE VC THOUGH");
+
+            // Data needed
+            const VoiceCreatorId = newState.id;
+
+            // Check if Member already owns an existing Temp VC
+            const CheckExistingVC = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === VoiceCreatorId);
+            if ( CheckExistingVC.length > 0 )
+            {
+                // Member already owns a Temp VC - as such move them to that VC
+                await newState.setChannel(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+                return;
+            }
+            else
+            {
+                // Member doesn't own a Temp VC already - so make new one for them
+                const GuildId = newState.guild.id;
+                const GuildSettings = VoiceSettings[GuildId];
+                // Grab Parent Temp VC Category
+                const ParentCategoryId = GuildSettings["PARENT_CATEGORY_ID"];
+                /** @type {CategoryChannel} */
+                const FetchedCategory = await newState.guild.channels.fetch(ParentCategoryId);
+
+                // Verify Bot has Permissions
+                /** @type {PermissionsBitField} */
+                const BotPermissions = FetchedCategory.permissionsFor(DiscordClient.user.id);
+                if ( !BotPermissions.has(PermissionFlagsBits.ViewChannel) || !BotPermissions.has(PermissionFlagsBits.ManageChannels) )
+                {
+                    await newState.channel.send({ allowedMentions: { users: [VoiceCreatorId] }, content: `Sorry <@${VoiceCreatorId}>, but I cannot create a new Temp Voice Channel for you, since I am missing required Permissions for the **<#${ParentCategoryId}>** Category. Please ask this Server's Admins or Owner to fix this!
+
+Permissions I require in **<#${ParentCategoryId}>** :
+- \`View Channels\`
+- \`Manage Channels\`` });
+                    return;
+                }
+
+
+                // Create Temp VC!
+                await newState.guild.channels.create({
+                    type: ChannelType.GuildVoice,
+                    parent: ParentCategoryId,
+                    name: `${newState.member.user.username}`,
+                    reason: `${newState.member.user.username}#${newState.member.user.discriminator} created a new Temp VC`
+                })
+                .then(async (CreatedVoiceChannel) => {
+                    // Voice Channel Created
+                    // Create Permission Overwrites for Channel Owner & Bot
+                    await CreatedVoiceChannel.permissionOverwrites.edit(VoiceCreatorId, { ViewChannel: true, Connect: true, ManageChannels: true });
+                    await CreatedVoiceChannel.permissionOverwrites.edit(DiscordClient.user.id, { ViewChannel: true, Connect: true, ManageChannels: true });
+
+                    // Save to JSON
+                    let newVoice = {
+                        "VOICE_CHANNEL_ID": CreatedVoiceChannel.id,
+                        "CHANNEL_OWNER_ID": VoiceCreatorId
+                    };
+                    ActiveTempVoices[CreatedVoiceChannel.id] = newVoice;
+                    fs.writeFile('./JsonFiles/hidden/activeTempVoices.json', JSON.stringify(ActiveTempVoices, null, 4), async (err) => {
+                        if (err) { 
+                            //console.error(err);
+                        }
+                    });
+
+                    // Move Member into VC
+                    await newState.setChannel(CreatedVoiceChannel.id);
+
+                    // Send message into VC (thanks to TiV)
+                    await CreatedVoiceChannel.send({ allowedMentions: { users: [VoiceCreatorId] }, content: `*Temp VC | Creator: <@${VoiceCreatorId}>*
+
+Welcome to your personal Voice Channel!
+It will be removed once every Member has left the Voice Channel. If you need help, use the </voice help:1024978099303104532> Command - and remember to follow this Server's Rules!\n\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬` });
+
+                    return;
+                })
+                .catch( async (err) => {
+                    //console.error(err);
+                    await newState.channel.send({ allowedMentions: { users: [VoiceCreatorId] }, content: `Sorry <@${VoiceCreatorId}>, something went wrong while trying to create your Temp Voice Channel... Please try again in a moment.` });
+                });
+
+                return;
+            }
+        }
         return;
     }
 
