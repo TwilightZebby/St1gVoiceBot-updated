@@ -203,6 +203,7 @@ DiscordClient.on('interactionCreate', async (interaction) => {
 /******************************************************************************* */
 // DISCORD - VOICE STATE UPDATE EVENT
 const TempVoiceChannelModule = require('./BotModules/TempVoiceChannelModule.js');
+const TempVCLoggingModule = require('./BotModules/TempVCLoggingModule.js');
 
 DiscordClient.on("voiceStateUpdate", async (oldState, newState) => {
     // Grab JSONs so we can ignore any Voice States NOT from Temp VCs
@@ -295,6 +296,9 @@ Permissions I require in **<#${ParentCategoryId}>** :
 
 Welcome to your personal Voice Channel!
 It will be removed once every Member has left the Voice Channel. If you need help, use the </voice help:1024978099303104532> Command - and remember to follow this Server's Rules!\n\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬` });
+
+                    // Log Creation
+                    await TempVCLoggingModule.logCreation(CreatedVoiceChannel, newState.member);
 
                     return;
                 })
