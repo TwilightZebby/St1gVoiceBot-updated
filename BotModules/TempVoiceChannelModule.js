@@ -1,5 +1,6 @@
 const { VoiceState, VoiceChannel } = require("discord.js");
 const fs = require('fs');
+const TempVCLoggingModule = require('./TempVCLoggingModule.js');
 const LocalizedErrors = require("../JsonFiles/errorMessages.json");
 
 module.exports = {
@@ -31,7 +32,6 @@ module.exports = {
     async deleteTempVoiceChannel(oldState)
     {
         // Bring in JSONs
-        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
         const ActiveTempVoices = require('../JsonFiles/hidden/activeTempVoices.json');
         // Grab Temp VC
         /** @type {VoiceChannel} */
@@ -43,6 +43,10 @@ module.exports = {
         // Announce deletion
         await TempVoiceChannel.send({ content: `⚠ Automatically deleting this Temp Voice Channel now that everyone has left it...` })
         .then(async () => {
+            // Log deletion
+            await TempVCLoggingModule.logDeletion(TempVoiceChannel, ActiveTempVoices[TempVoiceChannel.id]["CHANNEL_OWNER_ID"], ActiveTempVoices[TempVoiceChannel.id]["CHANNEL_CREATOR_ID"]);
+
+
             // Remove from Active Temp VCs JSON
             delete ActiveTempVoices[`${TempVoiceChannel.id}`];
             fs.writeFile('./JsonFiles/hidden/activeTempVoices.json', JSON.stringify(ActiveTempVoices, null, 4), async (err) => {

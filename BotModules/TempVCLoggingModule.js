@@ -12,8 +12,6 @@ module.exports = {
     {
         // Grab JSONs
         const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
-        const ActiveTempVoices = require('../JsonFiles/hidden/activeTempVoices.json');
-        const SearchableActiveTempVoices = Object.values(ActiveTempVoices);
 
         // Check Logging is enabled on this Server
         if ( hasLoggingEnabled(voiceChannel.guildId) == false ) { return; }
@@ -41,6 +39,54 @@ module.exports = {
         {
             // Send Creation Log
             await LogChannel.send({ embeds: [CreatedEmbed] });
+            return;
+        }
+    },
+
+
+
+
+    /**
+     * Logs deletion of a Temp VC
+     * @param {VoiceChannel} voiceChannel 
+     * @param {String} channelOwnerId
+     * @param {String} channelCreatorId
+     */
+    async logDeletion(voiceChannel, channelOwnerId, channelCreatorId)
+    {
+        // Grab JSONs
+        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
+
+        // Check Logging is enabled on this Server
+        if ( hasLoggingEnabled(voiceChannel.guildId) == false ) { return; }
+
+        // Grab Log Channel's ID
+        const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
+        // Grab Member Object for current Channel Owner & Channel Creator
+        const ChannelOwnerMember = await voiceChannel.guild.members.fetch(channelOwnerId);
+        const ChannelCreatorMember = await voiceChannel.guild.members.fetch(channelCreatorId);
+
+        // Create embed
+        const DeletionEmbed = new EmbedBuilder().setColor(Colors.Red)
+        .setTitle("Temp VC Deleted")
+        .addFields(
+            { name: `Voice Channel`, value: `${voiceChannel.name}\n<#${voiceChannel.id}>\n*${voiceChannel.id}*` },
+            { name: `Channel Owner`, value: `${ChannelOwnerMember.user.username}#${ChannelOwnerMember.user.discriminator}\n<@${ChannelOwnerMember.id}>\n*${ChannelOwnerMember.id}*` },
+            { name: `Channel Creator`, value: `${ChannelCreatorMember.user.username}#${ChannelCreatorMember.user.discriminator}\n<@${ChannelCreatorMember.id}>\n*${ChannelCreatorMember.id}*` }
+        )
+        .setTimestamp(Date.now());
+
+        // Grab Log Channel
+        const LogChannel = await fetchLogChannel(voiceChannel.guild, LogChannelId);
+        if ( LogChannel == null )
+        { 
+            delete DeletionEmbed;
+            return;
+        }
+        else
+        {
+            // Send Creation Log
+            await LogChannel.send({ embeds: [DeletionEmbed] });
             return;
         }
     }

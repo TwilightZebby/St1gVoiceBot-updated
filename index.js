@@ -279,7 +279,8 @@ Permissions I require in **<#${ParentCategoryId}>** :
                     // Save to JSON
                     let newVoice = {
                         "VOICE_CHANNEL_ID": CreatedVoiceChannel.id,
-                        "CHANNEL_OWNER_ID": VoiceCreatorId
+                        "CHANNEL_OWNER_ID": VoiceCreatorId,
+                        "CHANNEL_CREATOR_ID": VoiceCreatorId
                     };
                     ActiveTempVoices[CreatedVoiceChannel.id] = newVoice;
                     fs.writeFile('./JsonFiles/hidden/activeTempVoices.json', JSON.stringify(ActiveTempVoices, null, 4), async (err) => {
