@@ -321,6 +321,10 @@ It will be removed once every Member has left the Voice Channel. If you need hel
     if ( oldState.channelId == null && newState.channelId != null )
     {
         //console.log(`Member ${newState.member?.displayName} JOINED the Voice Channel ${newState.channel?.name}`);
+
+        // Log in VC's TC that a member joined the Temp VC
+        await TempVCLoggingModule.logMemberConnect(newState);
+
         return;
     }
     
@@ -338,6 +342,9 @@ It will be removed once every Member has left the Voice Channel. If you need hel
         // Check to see if previous VC was a Temp VC
         if ( oldState.channel?.parentId === VoiceSettings[`${oldState.guild.id}`]["PARENT_CATEGORY_ID"] )
         {
+            // Log into Temp VC's TC that the Member left it
+            await TempVCLoggingModule.logMemberDisconnect(oldState);
+
             // IS a Temp VC, so now check if empty
             if ( await TempVoiceChannelModule.isTempVoiceChannelEmpty(oldState) )
             {
@@ -345,6 +352,13 @@ It will be removed once every Member has left the Voice Channel. If you need hel
                 await TempVoiceChannelModule.deleteTempVoiceChannel(oldState);
             }
         }
+        // Check if new VC is a Temp VC
+        else if ( newState.channel?.parentId === VoiceSettings[`${newState.guild.id}`]["PARENT_CATEGORY_ID"] )
+        {
+            // Log into Temp VC's TC that the Member joined it
+            await TempVCLoggingModule.logMemberConnect(newState);
+        }
+
         return;
     }
     
@@ -355,6 +369,9 @@ It will be removed once every Member has left the Voice Channel. If you need hel
     if ( oldState.channelId != null && newState.channelId == null )
     {
         //console.log(`Member ${oldState.member?.displayName} LEFT the Voice Channel ${oldState.channel?.name}`);
+
+        // Log in Temp VC's TC that the Member disconnected
+        await TempVCLoggingModule.logMemberDisconnect(oldState);
 
         // Do nothing if Temp VC is not empty
         if ( await TempVoiceChannelModule.isTempVoiceChannelEmpty(oldState) )

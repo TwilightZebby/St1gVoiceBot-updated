@@ -1,4 +1,4 @@
-const { VoiceChannel, EmbedBuilder, Colors, GuildMember, Guild, TextChannel } = require("discord.js");
+const { VoiceChannel, EmbedBuilder, Colors, GuildMember, Guild, TextChannel, VoiceState } = require("discord.js");
 const fs = require('fs');
 const LocalizedErrors = require("../JsonFiles/errorMessages.json");
 
@@ -89,6 +89,57 @@ module.exports = {
             await LogChannel.send({ embeds: [DeletionEmbed] });
             return;
         }
+    },
+    
+
+
+
+    /**
+     * Logs a transcript of the Temp VC's Text Chat
+     * @param {VoiceChannel} voiceChannel 
+     */
+    async logChatTranscript(voiceChannel)
+    {
+        // Grab JSONs
+        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
+
+        // Check we can log
+        if ( VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"] == null || VoiceSettings[voiceChannel.guildId]["LOGGING"]["TEXT_CHAT"] === false )
+        { return; }
+
+        // Grab Log Channel's ID
+        const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
+
+        // Fetch all messages in Channel, and transcribe them into a JSON file to be sent
+        // TODO: This
+    },
+    
+
+
+
+    /**
+     * Logs when a Member has joined a Temp VC
+     * @param {VoiceState} voiceState 
+     */
+    async logMemberConnect(voiceState)
+    {
+        // Send Message in Temp VC's TC
+        await voiceState.channel.send({ allowedMentions: { parse: [] }, content: `🟢 ***${voiceState.member.displayName}** joined this Voice Channel.*` });
+        return;
+    },
+    
+
+
+
+    /**
+     * Logs when a Member has left a Temp VC
+     * @param {VoiceState} voiceState 
+     */
+    async logMemberDisconnect(voiceState)
+    {
+        // Send Message in Temp VC's TC
+        await voiceState.channel.send({ allowedMentions: { parse: [] }, content: `🔴 ***${voiceState.member.displayName}** left this Voice Channel.*` });
+        return;
     }
 }
 

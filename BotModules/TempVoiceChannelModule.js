@@ -33,6 +33,8 @@ module.exports = {
     {
         // Bring in JSONs
         const ActiveTempVoices = require('../JsonFiles/hidden/activeTempVoices.json');
+        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
+
         // Grab Temp VC
         /** @type {VoiceChannel} */
         const TempVoiceChannel = await oldState.guild.channels.fetch(oldState.channelId)
@@ -45,6 +47,8 @@ module.exports = {
         .then(async () => {
             // Log deletion
             await TempVCLoggingModule.logDeletion(TempVoiceChannel, ActiveTempVoices[TempVoiceChannel.id]["CHANNEL_OWNER_ID"], ActiveTempVoices[TempVoiceChannel.id]["CHANNEL_CREATOR_ID"]);
+            // Log Chat Transcript (if enabled)
+            await TempVCLoggingModule.logChatTranscript(TempVoiceChannel);
 
 
             // Remove from Active Temp VCs JSON
