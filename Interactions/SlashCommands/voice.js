@@ -1,6 +1,7 @@
 const { ChatInputCommandInteraction, ChatInputApplicationCommandData, AutocompleteInteraction, ApplicationCommandType, ApplicationCommandOptionType, CategoryChannel, PermissionFlagsBits, PermissionsBitField, ChannelType, VoiceChannel, EmbedBuilder, Colors, GuildMember } = require("discord.js");
 const fs = require('fs');
-const { DiscordClient, Collections } = require("../../constants.js");
+const { DiscordClient } = require("../../constants.js");
+const TempVCLoggingModule = require('../../BotModules/TempVCLoggingModule.js');
 const LocalizedErrors = require("../../JsonFiles/errorMessages.json");
 const LocalizedStrings = require("../../JsonFiles/stringMessages.json");
 
@@ -654,6 +655,11 @@ async function renameTempVoice(slashCommand)
 
     /** @type {VoiceChannel} */
     const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+
+    // LOG Rename
+    await TempVCLoggingModule.logRename(FetchedVoiceChannel, FetchedVoiceChannel.name, InputNewName);
+    
+    // Actually rename it
     await FetchedVoiceChannel.edit({ name: InputNewName })
     .then(async () => { await slashCommand.editReply({ content: `Renamed Temp Voice Channel to ${InputNewName}` }); })
     .catch(async (err) => {

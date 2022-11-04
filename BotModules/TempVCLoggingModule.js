@@ -23,8 +23,8 @@ module.exports = {
         const CreatedEmbed = new EmbedBuilder().setColor(Colors.Aqua)
         .setTitle("Temp VC Created")
         .addFields(
-            { name: `Voice Channel`, value: `${voiceChannel.name}\n<#${voiceChannel.id}>\n*${voiceChannel.id}*` },
-            { name: `Channel Creator`, value: `${creatorMember.user.username}#${creatorMember.user.discriminator}\n<@${creatorMember.id}>\n*${creatorMember.id}*` }
+            { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
+            { name: `Channel Creator`, value: `**Tag:** ${creatorMember.user.username}#${creatorMember.user.discriminator}\n**Mention:** <@${creatorMember.id}>\n**ID:** *${creatorMember.id}*` }
         )
         .setTimestamp(voiceChannel.createdAt);
 
@@ -70,9 +70,9 @@ module.exports = {
         const DeletionEmbed = new EmbedBuilder().setColor(Colors.Red)
         .setTitle("Temp VC Deleted")
         .addFields(
-            { name: `Voice Channel`, value: `${voiceChannel.name}\n<#${voiceChannel.id}>\n*${voiceChannel.id}*` },
-            { name: `Channel Owner`, value: `${ChannelOwnerMember.user.username}#${ChannelOwnerMember.user.discriminator}\n<@${ChannelOwnerMember.id}>\n*${ChannelOwnerMember.id}*` },
-            { name: `Channel Creator`, value: `${ChannelCreatorMember.user.username}#${ChannelCreatorMember.user.discriminator}\n<@${ChannelCreatorMember.id}>\n*${ChannelCreatorMember.id}*` }
+            { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**ID:** *${voiceChannel.id}*` },
+            { name: `Channel Owner`, value: `**Tag:** ${ChannelOwnerMember.user.username}#${ChannelOwnerMember.user.discriminator}\n**Mention:** <@${ChannelOwnerMember.id}>\n**ID:** *${ChannelOwnerMember.id}*` },
+            { name: `Channel Creator`, value: `**Tag:** ${ChannelCreatorMember.user.username}#${ChannelCreatorMember.user.discriminator}\n**Mention:** <@${ChannelCreatorMember.id}>\n**ID:** *${ChannelCreatorMember.id}*` }
         )
         .setTimestamp(Date.now());
 
@@ -87,6 +87,51 @@ module.exports = {
         {
             // Send Creation Log
             await LogChannel.send({ embeds: [DeletionEmbed] });
+            return;
+        }
+    },
+    
+
+
+
+    /**
+     * Logs when a Temp VC has been renamed
+     * @param {VoiceChannel} voiceChannel
+     * @param {String} oldName
+     * @param {String} newName 
+     */
+    async logRename(voiceChannel, oldName, newName)
+    {
+        // Grab JSONs
+        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
+
+        // Check Logging is enabled on this Server
+        if ( hasLoggingEnabled(voiceChannel.guildId) == false ) { return; }
+
+        // Grab Log Channel's ID
+        const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
+
+        // Construct Embed
+        const RenameEmbed = new EmbedBuilder().setColor(Colors.Gold)
+        .setTitle(`Temp VC Renamed`)
+        .addFields(
+            { name: `Voice Channel`, value: `**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
+            { name: `Old Name`, value: oldName },
+            { name: `New Name`, value: newName }
+        )
+        .setTimestamp(Date.now());
+
+        // Grab Log Channel
+        const LogChannel = await fetchLogChannel(voiceChannel.guild, LogChannelId);
+        if ( LogChannel == null )
+        { 
+            delete RenameEmbed;
+            return;
+        }
+        else
+        {
+            // Send Rename Log
+            await LogChannel.send({ embeds: [RenameEmbed] });
             return;
         }
     },
