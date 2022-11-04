@@ -71,8 +71,8 @@ module.exports = {
         .setTitle("Temp VC Deleted")
         .addFields(
             { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**ID:** *${voiceChannel.id}*` },
-            { name: `Channel Owner`, value: `**Tag:** ${ChannelOwnerMember.user.username}#${ChannelOwnerMember.user.discriminator}\n**Mention:** <@${ChannelOwnerMember.id}>\n**ID:** *${ChannelOwnerMember.id}*` },
-            { name: `Channel Creator`, value: `**Tag:** ${ChannelCreatorMember.user.username}#${ChannelCreatorMember.user.discriminator}\n**Mention:** <@${ChannelCreatorMember.id}>\n**ID:** *${ChannelCreatorMember.id}*` }
+            { name: `Channel's Last Owner`, value: `**Tag:** ${ChannelOwnerMember.user.username}#${ChannelOwnerMember.user.discriminator}\n**Mention:** <@${ChannelOwnerMember.id}>\n**ID:** *${ChannelOwnerMember.id}*` },
+            { name: `Channel's Creator`, value: `**Tag:** ${ChannelCreatorMember.user.username}#${ChannelCreatorMember.user.discriminator}\n**Mention:** <@${ChannelCreatorMember.id}>\n**ID:** *${ChannelCreatorMember.id}*` }
         )
         .setTimestamp(Date.now());
 
