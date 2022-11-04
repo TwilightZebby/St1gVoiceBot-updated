@@ -349,12 +349,15 @@ async function transferOwnership(slashCommand)
     if ( InputMember.voice?.channelId == null ) { return await slashCommand.reply({ ephemeral: true, content: `You cannot transfer ownership of your Temp Voice Channel to someone who is *not* currently connected to a Temp Voice Channel.` }); }
     if ( InputMember.voice.channel.parentId !== VoiceSettings[`${slashCommand.guildId}`]["PARENT_CATEGORY_ID"] ) { return await slashCommand.reply({ ephemeral: true, content: `You cannot transfer ownership of your Temp Voice Channel to someone who is *not* currently connected to a Temp Voice Channel.` }); }
 
-    // Claim Ownership
+    // Transfer Ownership
     await slashCommand.deferReply();
 
     const GrabVCJson = SearchableActiveTempVoices.filter(item => item['CHANNEL_OWNER_ID'] === slashCommand.user.id);
-
     const UpdatedJSONObject = GrabVCJson[0];
+
+    // Log Ownership Transfer
+    await TempVCLoggingModule.logOwnershipTransfer(UpdatedJSONObject["VOICE_CHANNEL_ID"], InputMember.guild.id, slashCommand.member, InputMember);
+
     UpdatedJSONObject["CHANNEL_OWNER_ID"] = InputMember.id;
     ActiveTempVoices[`${UpdatedJSONObject["VOICE_CHANNEL_ID"]}`] = UpdatedJSONObject;
     fs.writeFile('./JsonFiles/hidden/activeTempVoices.json', JSON.stringify(ActiveTempVoices, null, 4), async (err) => {
@@ -403,6 +406,9 @@ async function claimOwnership(slashCommand)
 
     // Claim Ownership
     await slashCommand.deferReply();
+
+    // Log Ownership Claim
+    TempVCLoggingModule.logOwnershipClaim(ConnectedVoiceChannel, CheckExistingVC[0]["CHANNEL_OWNER_ID"], CommandMember);
 
     const UpdatedJSONObject = CheckExistingVC[0];
     UpdatedJSONObject["CHANNEL_OWNER_ID"] = CommandMember.id;

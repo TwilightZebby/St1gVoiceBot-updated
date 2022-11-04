@@ -91,6 +91,97 @@ module.exports = {
         }
     },
     
+    
+
+
+
+    /**
+     * Logs when ownership of a Temp VC has been transferred
+     * @param {String} voiceChannelId
+     * @param {String} guildId
+     * @param {GuildMember} previousOwner
+     * @param {GuildMember} newOwner
+     */
+    async logOwnershipTransfer(voiceChannelId, guildId, previousOwner, newOwner)
+    {
+        // Grab JSONs
+        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
+
+        // Check Logging is enabled on this Server
+        if ( hasLoggingEnabled(guildId, "OWNER_STATUS") == false ) { return; }
+
+        // Grab Log Channel's ID
+        const LogChannelId = VoiceSettings[guildId]["LOG_CHANNEL_ID"];
+
+        // Construct Embed
+        const OwnershipEmbed = new EmbedBuilder().setColor(Colors.LuminousVividPink)
+        .setTitle(`Temp VC Ownership Transferred`)
+        .addFields(
+            { name: `Voice Channel`, value: `\n**Mention:** <#${voiceChannelId}>\n**ID:** *${voiceChannelId}*` },
+            { name: `Previous Owner`, value: `**Tag:** ${previousOwner.user.username}#${previousOwner.user.discriminator}\n**Mention:** <@${previousOwner.id}>\n**ID:** *${previousOwner.id}*` },
+            { name: `New Owner`, value: `**Tag:** ${newOwner.user.username}#${newOwner.user.discriminator}\n**Mention:** <@${newOwner.id}>\n**ID:** *${newOwner.id}*` }
+        )
+        .setTimestamp(Date.now());
+
+        // Grab Log Channel
+        const LogChannel = await fetchLogChannel(previousOwner.guild, LogChannelId);
+        if ( LogChannel == null )
+        { 
+            delete OwnershipEmbed;
+            return;
+        }
+        else
+        {
+            // Send Limit Change Log
+            await LogChannel.send({ embeds: [OwnershipEmbed] });
+            return;
+        }
+    },
+
+
+
+    /**
+     * Logs when ownership of a Temp VC has been claimed
+     * @param {VoiceChannel} voiceChannel
+     * @param {String} previousOwnerId
+     * @param {GuildMember} newOwner
+     */
+    async logOwnershipClaim(voiceChannel, previousOwnerId, newOwner)
+    {
+        // Grab JSONs
+        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
+
+        // Check Logging is enabled on this Server
+        if ( hasLoggingEnabled(voiceChannel.guildId, "OWNER_STATUS") == false ) { return; }
+
+        // Grab Log Channel's ID
+        const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
+
+        // Construct Embed
+        const OwnershipEmbed = new EmbedBuilder().setColor(Colors.LuminousVividPink)
+        .setTitle(`Temp VC Ownership Claimed`)
+        .addFields(
+            { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
+            { name: `Previous Owner`, value: `**Mention:** <@${previousOwnerId}>\n**ID:** *${previousOwnerId}*` },
+            { name: `New Owner`, value: `**Mention:** <@${newOwner.id}>\n**ID:** *${newOwner.id}*` }
+        )
+        .setTimestamp(Date.now());
+
+        // Grab Log Channel
+        const LogChannel = await fetchLogChannel(voiceChannel.guild, LogChannelId);
+        if ( LogChannel == null )
+        { 
+            delete OwnershipEmbed;
+            return;
+        }
+        else
+        {
+            // Send Limit Change Log
+            await LogChannel.send({ embeds: [OwnershipEmbed] });
+            return;
+        }
+    },
+    
 
 
 
