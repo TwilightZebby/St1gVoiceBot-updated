@@ -719,6 +719,11 @@ async function lockTempVoice(slashCommand)
 
     /** @type {VoiceChannel} */
     const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+
+    // Log Lock
+    await TempVCLoggingModule.logLock(FetchedVoiceChannel);
+
+    // Actually lock Temp VC
     await FetchedVoiceChannel.permissionOverwrites.edit(VoiceSettings[`${slashCommand.guildId}`]["BASE_ROLE_ID"], { Connect: false })
     .then(async () => { await slashCommand.editReply({ content: `Locked Temp Voice Channel!` }); })
     .catch(async (err) => {
@@ -755,6 +760,11 @@ async function unlockTempVoice(slashCommand)
 
     /** @type {VoiceChannel} */
     const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+
+    // Log Unlock
+    await TempVCLoggingModule.logUnlock(FetchedVoiceChannel);
+
+    // Actually unlock Temp VC
     await FetchedVoiceChannel.permissionOverwrites.edit(VoiceSettings[`${slashCommand.guildId}`]["BASE_ROLE_ID"], { Connect: true })
     .then(async () => { await slashCommand.editReply({ content: `Unlocked Temp Voice Channel!` }); })
     .catch(async (err) => {

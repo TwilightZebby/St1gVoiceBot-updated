@@ -95,6 +95,88 @@ module.exports = {
 
 
     /**
+     * Logs when a Temp VC is locked
+     * @param {VoiceChannel} voiceChannel
+     */
+    async logLock(voiceChannel)
+    {
+        // Grab JSONs
+        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
+
+        // Check Logging is enabled on this Server
+        if ( hasLoggingEnabled(voiceChannel.guildId, "LOCK_STATUS") == false ) { return; }
+
+        // Grab Log Channel's ID
+        const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
+
+        // Construct Embed
+        const LockEmbed = new EmbedBuilder().setColor(Colors.DarkRed)
+        .setTitle(`Temp VC Locked`)
+        .addFields(
+            { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` }
+        )
+        .setTimestamp(Date.now());
+
+        // Grab Log Channel
+        const LogChannel = await fetchLogChannel(voiceChannel.guild, LogChannelId);
+        if ( LogChannel == null )
+        { 
+            delete LockEmbed;
+            return;
+        }
+        else
+        {
+            // Send Limit Change Log
+            await LogChannel.send({ embeds: [LockEmbed] });
+            return;
+        }
+    },
+    
+
+
+
+    /**
+     * Logs when a Temp VC is unlocked
+     * @param {VoiceChannel} voiceChannel
+     */
+    async logUnlock(voiceChannel)
+    {
+        // Grab JSONs
+        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
+
+        // Check Logging is enabled on this Server
+        if ( hasLoggingEnabled(voiceChannel.guildId, "LOCK_STATUS") == false ) { return; }
+
+        // Grab Log Channel's ID
+        const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
+
+        // Construct Embed
+        const UnlockEmbed = new EmbedBuilder().setColor(Colors.Gold)
+        .setTitle(`Temp VC Unlocked`)
+        .addFields(
+            { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` }
+        )
+        .setTimestamp(Date.now());
+
+        // Grab Log Channel
+        const LogChannel = await fetchLogChannel(voiceChannel.guild, LogChannelId);
+        if ( LogChannel == null )
+        { 
+            delete UnlockEmbed;
+            return;
+        }
+        else
+        {
+            // Send Limit Change Log
+            await LogChannel.send({ embeds: [UnlockEmbed] });
+            return;
+        }
+    },
+    
+
+
+
+    /**
      * Logs when a Temp VC is unvanished
      * @param {VoiceChannel} voiceChannel
      */
@@ -151,7 +233,7 @@ module.exports = {
         const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
 
         // Construct Embed
-        const VanishEmbed = new EmbedBuilder().setColor(Colors.Red)
+        const VanishEmbed = new EmbedBuilder().setColor(Colors.DarkRed)
         .setTitle(`Temp VC Vanished`)
         .addFields(
             { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` }
@@ -194,7 +276,7 @@ module.exports = {
         const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
 
         // Construct Embed
-        const PermitEmbed = new EmbedBuilder().setColor(Colors.Red)
+        const PermitEmbed = new EmbedBuilder().setColor(Colors.DarkRed)
         .setTitle(`Temp VC Member Rejected`)
         .addFields(
             { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
