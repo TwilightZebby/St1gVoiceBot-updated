@@ -116,8 +116,8 @@ module.exports = {
         .setTitle(`Temp VC Member Rejected`)
         .addFields(
             { name: `Voice Channel`, value: `**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
-            { name: `Member Rejected`, value: `**Tag:** ${memberRejected.user.username}#${memberRejected.id}\n**Mention:** <@${memberRejected.id}>\n**ID:** *${memberRejected.id}*` },
-            { name: `Rejected By`, value: `**Tag:** ${channelOwner.user.username}#${channelOwner.id}\n**Mention:** <@${channelOwner.id}>\n**ID:** *${channelOwner.id}*` }
+            { name: `Member Rejected`, value: `**Tag:** ${memberRejected.user.username}#${memberRejected.user.discriminator}\n**Mention:** <@${memberRejected.id}>\n**ID:** *${memberRejected.id}*` },
+            { name: `Rejected By`, value: `**Tag:** ${channelOwner.user.username}#${channelOwner.user.discriminator}\n**Mention:** <@${channelOwner.id}>\n**ID:** *${channelOwner.id}*` }
         )
         .setTimestamp(Date.now());
 
@@ -161,8 +161,8 @@ module.exports = {
         .setTitle(`Temp VC Member Permitted`)
         .addFields(
             { name: `Voice Channel`, value: `**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
-            { name: `Member Permitted`, value: `**Tag:** ${memberPermitted.user.username}#${memberPermitted.id}\n**Mention:** <@${memberPermitted.id}>\n**ID:** *${memberPermitted.id}*` },
-            { name: `Permitted By`, value: `**Tag:** ${channelOwner.user.username}#${channelOwner.id}\n**Mention:** <@${channelOwner.id}>\n**ID:** *${channelOwner.id}*` }
+            { name: `Member Permitted`, value: `**Tag:** ${memberPermitted.user.username}#${memberPermitted.user.discriminator}\n**Mention:** <@${memberPermitted.id}>\n**ID:** *${memberPermitted.id}*` },
+            { name: `Permitted By`, value: `**Tag:** ${channelOwner.user.username}#${channelOwner.user.discriminator}\n**Mention:** <@${channelOwner.id}>\n**ID:** *${channelOwner.id}*` }
         )
         .setTimestamp(Date.now());
 
