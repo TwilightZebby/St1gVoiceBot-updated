@@ -617,6 +617,11 @@ async function limitTempVoice(slashCommand)
 
     /** @type {VoiceChannel} */
     const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+
+    // Log Limit change
+    await TempVCLoggingModule.logLimit(FetchedVoiceChannel, FetchedVoiceChannel.userLimit, InputNewLimit);
+
+    // Actually change Limit
     await FetchedVoiceChannel.edit({ userLimit: InputNewLimit })
     .then(async () => { await slashCommand.editReply({ content: InputNewLimit === 0 ? `Removed the Member Limit for your Temp Voice Channel` : `Set the Member Limit for your Temp Voice Channel to ${InputNewLimit}` }); })
     .catch(async (err) => {

@@ -95,6 +95,51 @@ module.exports = {
 
 
     /**
+     * Logs when a Temp VC has had its Member Limit changed
+     * @param {VoiceChannel} voiceChannel
+     * @param {Number} oldLimit
+     * @param {Number} newLimit 
+     */
+    async logLimit(voiceChannel, oldLimit, newLimit)
+    {
+        // Grab JSONs
+        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
+
+        // Check Logging is enabled on this Server
+        if ( hasLoggingEnabled(voiceChannel.guildId, "LIMIT") == false ) { return; }
+
+        // Grab Log Channel's ID
+        const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
+
+        // Construct Embed
+        const LimitEmbed = new EmbedBuilder().setColor(Colors.Gold)
+        .setTitle(`Temp VC Member Limit Changed`)
+        .addFields(
+            { name: `Voice Channel`, value: `**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
+            { name: `Old Limit`, value: `${oldLimit}` },
+            { name: `New Limit`, value: `${newLimit}` }
+        )
+        .setTimestamp(Date.now());
+
+        // Grab Log Channel
+        const LogChannel = await fetchLogChannel(voiceChannel.guild, LogChannelId);
+        if ( LogChannel == null )
+        { 
+            delete LimitEmbed;
+            return;
+        }
+        else
+        {
+            // Send Limit Change Log
+            await LogChannel.send({ embeds: [LimitEmbed] });
+            return;
+        }
+    },
+    
+
+
+
+    /**
      * Logs when a Temp VC has been renamed
      * @param {VoiceChannel} voiceChannel
      * @param {String} oldName
@@ -106,7 +151,7 @@ module.exports = {
         const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
 
         // Check Logging is enabled on this Server
-        if ( hasLoggingEnabled(voiceChannel.guildId) == false ) { return; }
+        if ( hasLoggingEnabled(voiceChannel.guildId, "RENAME") == false ) { return; }
 
         // Grab Log Channel's ID
         const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
@@ -148,9 +193,8 @@ module.exports = {
         // Grab JSONs
         const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
 
-        // Check we can log
-        if ( VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"] == null || VoiceSettings[voiceChannel.guildId]["LOGGING"]["TEXT_CHAT"] === false )
-        { return; }
+        // Check Logging is enabled on this Server
+        if ( hasLoggingEnabled(voiceChannel.guildId, "TEXT_CHAT") == false ) { return; }
 
         // Grab Log Channel's ID
         const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
@@ -220,13 +264,22 @@ async function fetchLogChannel(guild, logChannelId)
 /**
  * Checks if the Guild has logging enabled (that is, has a Log Channel set)
  * @param {String} guildId 
+ * @param {String} [logType]
  * @returns {Boolean}
  */
-function hasLoggingEnabled(guildId)
+function hasLoggingEnabled(guildId, logType)
 {
     // Grab JSON
     const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
 
-    if ( VoiceSettings[guildId]["LOG_CHANNEL_ID"] == null ) { return false; }
-    else { return true; }
+    if ( !logType )
+    {
+        if ( VoiceSettings[guildId]["LOG_CHANNEL_ID"] == null ) { return false; }
+        else { return true; }
+    }
+    else
+    {
+        if ( VoiceSettings[guildId]["LOG_CHANNEL_ID"] == null || VoiceSettings[guildId]["LOGGING"][logType] === false ) { return false; }
+        else { return true; }
+    }
 }
