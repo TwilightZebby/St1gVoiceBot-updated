@@ -95,6 +95,88 @@ module.exports = {
 
 
     /**
+     * Logs when a Temp VC is unvanished
+     * @param {VoiceChannel} voiceChannel
+     */
+    async logUnvanish(voiceChannel)
+    {
+        // Grab JSONs
+        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
+
+        // Check Logging is enabled on this Server
+        if ( hasLoggingEnabled(voiceChannel.guildId, "VANISH_STATUS") == false ) { return; }
+
+        // Grab Log Channel's ID
+        const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
+
+        // Construct Embed
+        const UnvanishEmbed = new EmbedBuilder().setColor(Colors.Gold)
+        .setTitle(`Temp VC Unvanished`)
+        .addFields(
+            { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` }
+        )
+        .setTimestamp(Date.now());
+
+        // Grab Log Channel
+        const LogChannel = await fetchLogChannel(voiceChannel.guild, LogChannelId);
+        if ( LogChannel == null )
+        { 
+            delete UnvanishEmbed;
+            return;
+        }
+        else
+        {
+            // Send Limit Change Log
+            await LogChannel.send({ embeds: [UnvanishEmbed] });
+            return;
+        }
+    },
+    
+
+
+
+    /**
+     * Logs when a Temp VC is vanished
+     * @param {VoiceChannel} voiceChannel
+     */
+    async logVanish(voiceChannel)
+    {
+        // Grab JSONs
+        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
+
+        // Check Logging is enabled on this Server
+        if ( hasLoggingEnabled(voiceChannel.guildId, "VANISH_STATUS") == false ) { return; }
+
+        // Grab Log Channel's ID
+        const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
+
+        // Construct Embed
+        const VanishEmbed = new EmbedBuilder().setColor(Colors.Red)
+        .setTitle(`Temp VC Vanished`)
+        .addFields(
+            { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` }
+        )
+        .setTimestamp(Date.now());
+
+        // Grab Log Channel
+        const LogChannel = await fetchLogChannel(voiceChannel.guild, LogChannelId);
+        if ( LogChannel == null )
+        { 
+            delete VanishEmbed;
+            return;
+        }
+        else
+        {
+            // Send Limit Change Log
+            await LogChannel.send({ embeds: [VanishEmbed] });
+            return;
+        }
+    },
+    
+
+
+
+    /**
      * Logs when a Member gets rejected from a Temp VC by its Owner
      * @param {VoiceChannel} voiceChannel
      * @param {GuildMember} channelOwner
@@ -115,7 +197,7 @@ module.exports = {
         const PermitEmbed = new EmbedBuilder().setColor(Colors.Red)
         .setTitle(`Temp VC Member Rejected`)
         .addFields(
-            { name: `Voice Channel`, value: `**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
+            { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
             { name: `Member Rejected`, value: `**Tag:** ${memberRejected.user.username}#${memberRejected.user.discriminator}\n**Mention:** <@${memberRejected.id}>\n**ID:** *${memberRejected.id}*` },
             { name: `Rejected By`, value: `**Tag:** ${channelOwner.user.username}#${channelOwner.user.discriminator}\n**Mention:** <@${channelOwner.id}>\n**ID:** *${channelOwner.id}*` }
         )
@@ -160,7 +242,7 @@ module.exports = {
         const PermitEmbed = new EmbedBuilder().setColor(Colors.Gold)
         .setTitle(`Temp VC Member Permitted`)
         .addFields(
-            { name: `Voice Channel`, value: `**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
+            { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
             { name: `Member Permitted`, value: `**Tag:** ${memberPermitted.user.username}#${memberPermitted.user.discriminator}\n**Mention:** <@${memberPermitted.id}>\n**ID:** *${memberPermitted.id}*` },
             { name: `Permitted By`, value: `**Tag:** ${channelOwner.user.username}#${channelOwner.user.discriminator}\n**Mention:** <@${channelOwner.id}>\n**ID:** *${channelOwner.id}*` }
         )
@@ -205,7 +287,7 @@ module.exports = {
         const LimitEmbed = new EmbedBuilder().setColor(Colors.Gold)
         .setTitle(`Temp VC Member Limit Changed`)
         .addFields(
-            { name: `Voice Channel`, value: `**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
+            { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
             { name: `Old Limit`, value: `${oldLimit}` },
             { name: `New Limit`, value: `${newLimit}` }
         )

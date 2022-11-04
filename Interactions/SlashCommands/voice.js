@@ -442,6 +442,11 @@ async function unvanishTempVoice(slashCommand)
 
     /** @type {VoiceChannel} */
     const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+
+    // Log Unvanishing
+    await TempVCLoggingModule.logUnvanish(FetchedVoiceChannel);
+
+    // Actually unvanish Temp VC
     await FetchedVoiceChannel.permissionOverwrites.edit(VoiceSettings[`${slashCommand.guildId}`]["BASE_ROLE_ID"], { ViewChannel: null })
     .then(async () => { await slashCommand.editReply({ content: `Unvanished your Temp Voice Channel!\nYou can vanish/hide it again using </voice vanish:${slashCommand.commandId}>` }); })
     .catch(async (err) => {
@@ -478,6 +483,11 @@ async function vanishTempVoice(slashCommand)
 
     /** @type {VoiceChannel} */
     const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+
+    // Log Vanishing
+    await TempVCLoggingModule.logVanish(FetchedVoiceChannel);
+
+    // Actually vanish Temp VC
     await FetchedVoiceChannel.permissionOverwrites.edit(VoiceSettings[`${slashCommand.guildId}`]["BASE_ROLE_ID"], { ViewChannel: false })
     .then(async () => { await slashCommand.editReply({ content: `Vanished your Temp Voice Channel!\nYou can unvanish/reveal it again using </voice unvanish:${slashCommand.commandId}>` }); })
     .catch(async (err) => {
