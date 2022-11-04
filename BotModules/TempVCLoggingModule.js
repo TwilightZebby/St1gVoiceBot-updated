@@ -67,7 +67,7 @@ module.exports = {
         const ChannelCreatorMember = await voiceChannel.guild.members.fetch(channelCreatorId);
 
         // Create embed
-        const DeletionEmbed = new EmbedBuilder().setColor(Colors.Red)
+        const DeletionEmbed = new EmbedBuilder().setColor(Colors.NotQuiteBlack)
         .setTitle("Temp VC Deleted")
         .addFields(
             { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**ID:** *${voiceChannel.id}*` },
@@ -87,6 +87,96 @@ module.exports = {
         {
             // Send Creation Log
             await LogChannel.send({ embeds: [DeletionEmbed] });
+            return;
+        }
+    },
+    
+
+
+
+    /**
+     * Logs when a Member gets rejected from a Temp VC by its Owner
+     * @param {VoiceChannel} voiceChannel
+     * @param {GuildMember} channelOwner
+     * @param {GuildMember} memberRejected 
+     */
+    async logMemberReject(voiceChannel, channelOwner, memberRejected)
+    {
+        // Grab JSONs
+        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
+
+        // Check Logging is enabled on this Server
+        if ( hasLoggingEnabled(voiceChannel.guildId, "PERMIT_REJECT") == false ) { return; }
+
+        // Grab Log Channel's ID
+        const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
+
+        // Construct Embed
+        const PermitEmbed = new EmbedBuilder().setColor(Colors.Red)
+        .setTitle(`Temp VC Member Rejected`)
+        .addFields(
+            { name: `Voice Channel`, value: `**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
+            { name: `Member Rejected`, value: `**Tag:** ${memberRejected.user.username}#${memberRejected.id}\n**Mention:** <@${memberRejected.id}>\n**ID:** *${memberRejected.id}*` },
+            { name: `Rejected By`, value: `**Tag:** ${channelOwner.user.username}#${channelOwner.id}\n**Mention:** <@${channelOwner.id}>\n**ID:** *${channelOwner.id}*` }
+        )
+        .setTimestamp(Date.now());
+
+        // Grab Log Channel
+        const LogChannel = await fetchLogChannel(voiceChannel.guild, LogChannelId);
+        if ( LogChannel == null )
+        { 
+            delete PermitEmbed;
+            return;
+        }
+        else
+        {
+            // Send Limit Change Log
+            await LogChannel.send({ embeds: [PermitEmbed] });
+            return;
+        }
+    },
+    
+
+
+
+    /**
+     * Logs when a Member gets permitted into a Temp VC by its Owner
+     * @param {VoiceChannel} voiceChannel
+     * @param {GuildMember} channelOwner
+     * @param {GuildMember} memberPermitted 
+     */
+    async logMemberPermit(voiceChannel, channelOwner, memberPermitted)
+    {
+        // Grab JSONs
+        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
+
+        // Check Logging is enabled on this Server
+        if ( hasLoggingEnabled(voiceChannel.guildId, "PERMIT_REJECT") == false ) { return; }
+
+        // Grab Log Channel's ID
+        const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
+
+        // Construct Embed
+        const PermitEmbed = new EmbedBuilder().setColor(Colors.Gold)
+        .setTitle(`Temp VC Member Permitted`)
+        .addFields(
+            { name: `Voice Channel`, value: `**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
+            { name: `Member Permitted`, value: `**Tag:** ${memberPermitted.user.username}#${memberPermitted.id}\n**Mention:** <@${memberPermitted.id}>\n**ID:** *${memberPermitted.id}*` },
+            { name: `Permitted By`, value: `**Tag:** ${channelOwner.user.username}#${channelOwner.id}\n**Mention:** <@${channelOwner.id}>\n**ID:** *${channelOwner.id}*` }
+        )
+        .setTimestamp(Date.now());
+
+        // Grab Log Channel
+        const LogChannel = await fetchLogChannel(voiceChannel.guild, LogChannelId);
+        if ( LogChannel == null )
+        { 
+            delete PermitEmbed;
+            return;
+        }
+        else
+        {
+            // Send Limit Change Log
+            await LogChannel.send({ embeds: [PermitEmbed] });
             return;
         }
     },

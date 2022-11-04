@@ -521,8 +521,11 @@ async function rejectMember(slashCommand)
 
     /** @type {VoiceChannel} */
     const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
-    await InputMember.fetch(); // Just to ensure up to date Voice State
 
+    // Log Rejection
+    await TempVCLoggingModule.logMemberReject(FetchedVoiceChannel, slashCommand.member, InputMember);
+
+    await InputMember.fetch(); // Just to ensure up to date Voice State
     // If Member is inside Voice Channel, force-disconnect them
     if ( InputMember.voice.channelId === FetchedVoiceChannel.id )
     {
@@ -579,6 +582,11 @@ async function permitMember(slashCommand)
 
     /** @type {VoiceChannel} */
     const FetchedVoiceChannel = await slashCommand.guild.channels.fetch(CheckExistingVC[0]["VOICE_CHANNEL_ID"]);
+
+    // Log Member Permit
+    await TempVCLoggingModule.logMemberPermit(FetchedVoiceChannel, slashCommand.member, InputMember);
+
+    // Actually Permit Member
     await FetchedVoiceChannel.permissionOverwrites.edit(InputMember.id, { ViewChannel: true, Connect: true })
     .then(async () => { await slashCommand.editReply({ allowedMentions: { parse: [] }, content: `Permitted <@${InputMember.id}> to join your Temp Voice Channel!` }); })
     .catch(async (err) => {
