@@ -20,7 +20,7 @@ DiscordClient.once('ready', async () => {
         ConfigCommand.registerData(), VoiceCommand.registerData()
     ];
 
-    await DiscordClient.application.commands.set(CommandDataArray);
+    await DiscordClient.application.commands.set(CommandDataArray); // Registers commands globally (for all Servers the Bot is in)
 
     console.log("Deployed Commands!");
     process.exit();
