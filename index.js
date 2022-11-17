@@ -252,13 +252,14 @@ DiscordClient.on("voiceStateUpdate", async (oldState, newState) => {
                 // Verify Bot has Permissions
                 /** @type {PermissionsBitField} */
                 const BotPermissions = FetchedCategory.permissionsFor(DiscordClient.user.id);
-                if ( !BotPermissions.has(PermissionFlagsBits.ViewChannel) || !BotPermissions.has(PermissionFlagsBits.ManageChannels) )
+                if ( !BotPermissions.has(PermissionFlagsBits.ViewChannel) || !BotPermissions.has(PermissionFlagsBits.ManageChannels) || !BotPermissions.has(PermissionFlagsBits.ReadMessageHistory) )
                 {
                     await newState.channel.send({ allowedMentions: { users: [VoiceCreatorId] }, content: `Sorry <@${VoiceCreatorId}>, but I cannot create a new Temp Voice Channel for you, since I am missing required Permissions for the **<#${ParentCategoryId}>** Category. Please ask this Server's Admins or Owner to fix this!
 
 Permissions I require in **<#${ParentCategoryId}>** :
 - \`View Channels\`
-- \`Manage Channels\`` });
+- \`Manage Channels\`
+- \`Read Message History\`` });
                     return;
                 }
 
@@ -274,7 +275,7 @@ Permissions I require in **<#${ParentCategoryId}>** :
                     // Voice Channel Created
                     // Create Permission Overwrites for Channel Owner & Bot
                     await CreatedVoiceChannel.permissionOverwrites.edit(VoiceCreatorId, { ViewChannel: true, Connect: true, ManageChannels: true });
-                    await CreatedVoiceChannel.permissionOverwrites.edit(DiscordClient.user.id, { ViewChannel: true, Connect: true, ManageChannels: true });
+                    await CreatedVoiceChannel.permissionOverwrites.edit(DiscordClient.user.id, { ViewChannel: true, Connect: true, ManageChannels: true, ReadMessageHistory: true });
 
                     // Save to JSON
                     let newVoice = {

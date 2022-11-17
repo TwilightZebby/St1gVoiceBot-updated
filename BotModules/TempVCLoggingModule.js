@@ -1,4 +1,4 @@
-const { VoiceChannel, EmbedBuilder, Colors, GuildMember, Guild, TextChannel, VoiceState } = require("discord.js");
+const { VoiceChannel, EmbedBuilder, Colors, GuildMember, Guild, TextChannel, VoiceState, AttachmentBuilder, Collection, Message } = require("discord.js");
 const fs = require('fs');
 const LocalizedErrors = require("../JsonFiles/errorMessages.json");
 
@@ -87,6 +87,228 @@ module.exports = {
         {
             // Send Creation Log
             await LogChannel.send({ embeds: [DeletionEmbed] });
+            return;
+        }
+    },
+    
+
+
+
+    /**
+     * Logs a transcript of the Temp VC's Text Chat
+     * @param {VoiceChannel} voiceChannel 
+     */
+    async logChatTranscript(voiceChannel)
+    {
+        // Grab JSONs
+        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
+
+        // Check Logging is enabled on this Server
+        if ( hasLoggingEnabled(voiceChannel.guildId, "TEXT_CHAT") == false ) { return; }
+
+        // Grab Log Channel's ID
+        const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
+        
+        // Fetch all the Messages sent in the Temp VC, looping if need be because of Discord's 100-max restriction on their "bulk GET messages" endpoint
+        let fetchedMessagesCollection = await voiceChannel.messages.fetch({ limit: 100, cache: false });
+        if ( fetchedMessagesCollection.size === 100 )
+        {
+            let doLoop = false;
+            let lastFetchedMessageId = fetchedMessagesCollection.last().id;
+            do {
+                let tempCollection = await voiceChannel.messages.fetch({ before: lastFetchedMessageId, limit: 100, cache: false });
+                fetchedMessagesCollection = fetchedMessagesCollection.concat(tempCollection);
+                if ( tempCollection.size === 100 )
+                {
+                    doLoop = true;
+                    lastFetchedMessageId = tempCollection.last().id;
+                    continue;
+                }
+                else
+                {
+                    doLoop = false;
+                    lastFetchedMessageId = null;
+                    break;
+                }
+            } while (doLoop)
+        }
+
+        // Reverse order of Messages so newest is at the bottom
+        //fetchedMessagesCollection = fetchedMessagesCollection.reverse();
+
+        let cleanMessagesArray = [];
+
+        // Clean up objects for JSON reasons
+        fetchedMessagesCollection.forEach(message => {
+            // Just to also tidy up extra message stuff
+            let messageAttachments = [];
+            let messageStickers = [];
+            let channelMentions = [];
+            let memberMentions = [];
+            let userMentions = [];
+            let roleMentions = [];
+            let repliedUser = null;
+            
+            if ( message.attachments.size > 0 )
+            {
+                message.attachments.forEach(attachment => {
+                    let newAttachmentObject = {
+                        url: attachment.url,
+                        proxyURL: attachment.proxyURL,
+                        name: attachment.name,
+                        contentType: attachment.contentType,
+                        description: attachment.description
+                    };
+
+                    messageAttachments.push(newAttachmentObject);
+                });
+            }
+
+            if ( message.stickers.size > 0 )
+            {
+                message.stickers.forEach(sticker => {
+                    let newStickerObject = {
+                        name: sticker.name,
+                        description: sticker.description,
+                        guildId: sticker.guildId
+                    };
+
+                    messageStickers.push(newStickerObject);
+                });
+            }
+
+            if ( message.mentions.channels.size > 0 )
+            {
+                message.mentions.channels.forEach(channel => {
+                    let newChannelObject = {
+                        id: channel.id,
+                        type: channel.type,
+                        name: channel.name
+                    };
+
+                    channelMentions.push(newChannelObject);
+                });
+            }
+
+            if ( message.mentions.users.size > 0 )
+            {
+                message.mentions.users.forEach(user => {
+                    let newUserObject = {
+                        id: user.id,
+                        tag: `${user.username}#${user.discriminator}`,
+                        isBot: user.bot
+                    };
+
+                    userMentions.push(newUserObject);
+                });
+            }
+
+            if ( message.mentions.members.size > 0 )
+            {
+                message.mentions.members.forEach(member => {
+                    let newMemberObject = {
+                        id: member.id,
+                        tag: `${member.user.username}#${member.user.discriminator}`,
+                        nickname: member.nickname,
+                        isBot: member.user.bot
+                    };
+
+                    memberMentions.push(newMemberObject);
+                });
+            }
+
+            if ( message.mentions.roles.size > 0 )
+            {
+                message.mentions.roles.forEach(role => {
+                    let newRoleObject = {
+                       id: role.id,
+                       name: role.name
+                    };
+
+                    roleMentions.push(newRoleObject);
+                });
+            }
+
+            if ( message.mentions.repliedUser != null )
+            {
+                repliedUser = {
+                    id: message.mentions.repliedUser.id,
+                    tag: `${message.mentions.repliedUser.username}#${message.mentions.repliedUser.discriminator}`,
+                    isBot: message.mentions.repliedUser.bot
+                };
+            }
+
+
+            let newMessageObject = {
+                id: message.id,
+                createdTimestamp: message.createdTimestamp,
+                system: message.system,
+                authorId: message.author.id,
+                authorTag: `${message.author.username}#${message.author.discriminator}`,
+                authorNickname: message.member.nickname,
+                content: message.content,
+                cleanContent: message.cleanContent,
+                mentions: {
+                    everyone: message.mentions.everyone,
+                    users: userMentions,
+                    members: memberMentions,
+                    roles: roleMentions,
+                    channels: channelMentions,
+                    repliedUser: repliedUser
+                },
+                reference: message.reference,
+                embeds: message.embeds,
+                attachments: messageAttachments,
+                stickers: messageStickers,
+                components: message.components
+            };
+
+            cleanMessagesArray.push(newMessageObject);
+        });
+
+
+        // Create JSON file for Messages
+        fs.writeFile(`./JsonFiles/chatTranscriptsTemp/${voiceChannel.id}_transcript.txt`, JSON.stringify(cleanMessagesArray, null, 3), (err) => {
+            if ( err )
+            {
+                //console.error(err);
+                return;
+            }
+        });
+
+        // Create Discord Attachment for transcript
+        const ChatTranscriptAttachment = new AttachmentBuilder().setFile(`./JsonFiles/chatTranscriptsTemp/${voiceChannel.id}_transcript.txt`).setName(`${voiceChannel.id}_transcript.txt`);
+        
+        // Send Transcript
+        const LogChannel = await fetchLogChannel(voiceChannel.guild, LogChannelId);
+        if ( LogChannel == null )
+        { 
+            delete ChatTranscriptAttachment, fetchedMessagesCollection, cleanMessagesArray;
+            fs.unlink(`./JsonFiles/chatTranscriptsTemp/${voiceChannel.id}_transcript.txt`, (err) => {
+                if ( err )
+                {
+                    //console.error(err);
+                    return;
+                }
+            });
+            return;
+        }
+        else
+        {
+            // Send Limit Change Log
+            await LogChannel.send({ files: [ChatTranscriptAttachment] })
+            .catch(err => {
+                //console.error(err);
+            });
+
+            delete ChatTranscriptAttachment, fetchedMessagesCollection, cleanMessagesArray;
+            fs.unlink(`./JsonFiles/chatTranscriptsTemp/${voiceChannel.id}_transcript.txt`, (err) => {
+                if ( err )
+                {
+                    //console.error(err);
+                    return;
+                }
+            });
             return;
         }
     },
@@ -524,28 +746,6 @@ module.exports = {
             await LogChannel.send({ embeds: [RenameEmbed] });
             return;
         }
-    },
-    
-
-
-
-    /**
-     * Logs a transcript of the Temp VC's Text Chat
-     * @param {VoiceChannel} voiceChannel 
-     */
-    async logChatTranscript(voiceChannel)
-    {
-        // Grab JSONs
-        const VoiceSettings = require('../JsonFiles/hidden/guildSettings.json');
-
-        // Check Logging is enabled on this Server
-        if ( hasLoggingEnabled(voiceChannel.guildId, "TEXT_CHAT") == false ) { return; }
-
-        // Grab Log Channel's ID
-        const LogChannelId = VoiceSettings[voiceChannel.guildId]["LOG_CHANNEL_ID"];
-
-        // Fetch all messages in Channel, and transcribe them into a JSON file to be sent
-        // TODO: This
     },
     
 
