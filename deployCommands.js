@@ -4,17 +4,25 @@ const Config = require("./config.js");
 // Bring in Slash Commands for (un)registering
 const RegisterCommand = require('./Interactions/SlashCommands/register.js');
 const UnregisterCommand = require('./Interactions/SlashCommands/unregister.js');
+const ConfigCommand = require('./Interactions/SlashCommands/config.js');
+const VoiceCommand = require('./Interactions/SlashCommands/voice.js');
 
 // Login Bot
 DiscordClient.login(Config.TOKEN);
 
 // Wait for Ready
 DiscordClient.once('ready', async () => {
-    // Register Commands used for...(un)registering commands
-    await DiscordClient.application.commands.create(RegisterCommand.registerData(), Config.ErrorLogGuildID);
-    await DiscordClient.application.commands.create(UnregisterCommand.registerData(), Config.ErrorLogGuildID);
+    // Register Commands
+    //await DiscordClient.application.commands.create(RegisterCommand.registerData(), Config.ErrorLogGuildID);
+    //await DiscordClient.application.commands.create(UnregisterCommand.registerData(), Config.ErrorLogGuildID);
 
-    console.log("Deployed Register & Unregister Commands!");
+    const CommandDataArray = [
+        ConfigCommand.registerData(), VoiceCommand.registerData()
+    ];
+
+    await DiscordClient.application.commands.set(CommandDataArray);
+
+    console.log("Deployed Commands!");
     process.exit();
 });
 
