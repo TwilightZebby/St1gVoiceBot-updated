@@ -15,7 +15,7 @@ module.exports = {
     Category: "GENERAL",
 
     // Alias(es) of Command, if any
-    Alias: [],
+    Aliases: [],
 
     // Cooldown, in seconds
     //     Defaults to 3 seconds if missing
