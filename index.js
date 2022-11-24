@@ -340,6 +340,9 @@ It will be removed once every Member has left the Voice Channel. If you need hel
     {
         //console.log(`Member ${newState.member?.displayName} SWAPPED from the Voice Channel ${oldState.channel?.name} TO ${newState.channel?.name}`);
 
+        // Prevent voice state updates, like screenshares and Activities, from triggering this
+        if ( oldState.channelId === newState.channelId ) { return; }
+
         // Check to see if previous VC was a Temp VC
         if ( oldState.channel?.parentId === VoiceSettings[`${oldState.guild.id}`]["PARENT_CATEGORY_ID"] )
         {
