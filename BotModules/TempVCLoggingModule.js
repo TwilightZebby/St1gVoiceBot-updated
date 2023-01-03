@@ -1,6 +1,5 @@
 const { VoiceChannel, EmbedBuilder, Colors, GuildMember, Guild, TextChannel, VoiceState, AttachmentBuilder, Collection, Message } = require("discord.js");
 const fs = require('fs');
-const LocalizedErrors = require("../JsonFiles/errorMessages.json");
 
 module.exports = {
     /**

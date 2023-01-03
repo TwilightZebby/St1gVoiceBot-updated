@@ -1,7 +1,6 @@
 const { VoiceState, VoiceChannel } = require("discord.js");
 const fs = require('fs');
 const TempVCLoggingModule = require('./TempVCLoggingModule.js');
-const LocalizedErrors = require("../JsonFiles/errorMessages.json");
 
 module.exports = {
     /**

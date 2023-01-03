@@ -2,8 +2,6 @@ const { ChatInputCommandInteraction, ChatInputApplicationCommandData, Autocomple
 const fs = require('fs');
 const { DiscordClient } = require("../../constants.js");
 const TempVCLoggingModule = require('../../BotModules/TempVCLoggingModule.js');
-const LocalizedErrors = require("../../JsonFiles/errorMessages.json");
-const LocalizedStrings = require("../../JsonFiles/stringMessages.json");
 
 module.exports = {
     // Command's Name

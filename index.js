@@ -171,7 +171,7 @@ DiscordClient.on('interactionCreate', async (interaction) => {
         // Button
         return await ButtonHandler.Main(interaction);
     }
-    else if ( interaction.isSelectMenu() )
+    else if ( interaction.isAnySelectMenu() )
     {
         // Select
         return await SelectHandler.Main(interaction);
