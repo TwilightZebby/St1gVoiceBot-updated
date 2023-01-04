@@ -51,6 +51,7 @@ module.exports = {
         Data.description = this.Description;
         Data.type = ApplicationCommandType.ChatInput;
         Data.dmPermission = false;
+        Data.defaultMemberPermissions = PermissionFlagsBits.Administrator;
         Data.options = [
             {
                 type: ApplicationCommandOptionType.String,
