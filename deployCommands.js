@@ -2,8 +2,6 @@ const { DiscordClient } = require("./constants.js");
 const Config = require("./config.js");
 
 // Bring in Slash Commands for (un)registering
-const RegisterCommand = require('./Interactions/SlashCommands/register.js');
-const UnregisterCommand = require('./Interactions/SlashCommands/unregister.js');
 const ConfigCommand = require('./Interactions/SlashCommands/config.js');
 const VoiceCommand = require('./Interactions/SlashCommands/voice.js');
 
@@ -12,15 +10,18 @@ DiscordClient.login(Config.TOKEN);
 
 // Wait for Ready
 DiscordClient.once('ready', async () => {
-    // Register Commands
-    //await DiscordClient.application.commands.create(RegisterCommand.registerData(), Config.ErrorLogGuildID);
-    //await DiscordClient.application.commands.create(UnregisterCommand.registerData(), Config.ErrorLogGuildID);
+    // Register a SINGLE Command
+    //await DiscordClient.application.commands.create(ConfigCommand.registerData());
 
+    // Register multiple Commands
     const CommandDataArray = [
         ConfigCommand.registerData(), VoiceCommand.registerData()
     ];
 
-    await DiscordClient.application.commands.set(CommandDataArray); // Registers commands globally (for all Servers the Bot is in)
+    //await DiscordClient.application.commands.set(CommandDataArray); // Registers commands globally (for all Servers the Bot is in)
+
+    // UNregister all Commands
+    //await DiscordClient.application.commands.set([]);
 
     console.log("Deployed Commands!");
     process.exit();

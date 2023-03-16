@@ -69,3 +69,26 @@ Upon creation, a Temp VC will by default inherit the Permissions of its parent C
 > Attempts to claim ownership of the Temp VC the Member is currently connected to.
 > FAILS if the current VC Owner is still connected to the Temp VC, or if the Member running the Command is *not* connected to any Temp VCs.
 > SUCCEEDS if the current VC Owner is *not* connected to the Temp VC in question, thus transferring VC Ownership to the Member running this Command.
+
+---
+
+# How to register the Slash Commands
+
+1. Go into `./deployCommands.js` and uncomment the relevant line
+2. Use `node deployCommands.js` in your command line/terminal
+
+# How to UNregister (remove from Discord) the Slash Commands
+
+1. Go to `./deployCommands.js` and uncomment the relevant line
+2. Make sure you are unregistering the Command from the Scope it was previously registered to.
+  - For instance: Trying to unregister it globally when it is registered to a specific Server will fail.
+  - Do **NOT** add anything in the empty Array on in the `.set()` method. The empty Array is used as a shortcut for "unregister ALL Application Commands for this Bot".
+3. Use `node deployCommands.js` in your command line/terminal
+
+---
+
+# Configuration File
+
+- `ErrorLogChannelID` - Currently unused
+- `ErrorLogGuildID` - Used in `./deployCommands.js` for (un)registering Slash Command to/from the specific Server
+- `BotDevID` - Used in the Text Command Permissions System
