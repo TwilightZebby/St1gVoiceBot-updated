@@ -827,7 +827,7 @@ Permissions I require in **<#${ParentCategoryId}>** :
         type: ChannelType.GuildVoice,
         parent: ParentCategoryId,
         name: `${VoiceCreator.user.username}`,
-        reason: `${VoiceCreator.user.username}#${VoiceCreator.user.discriminator} created a new Temp VC`
+        reason: `${VoiceCreator.user.tag} created a new Temp VC`
     })
     .then(async (CreatedVoiceChannel) => {
         // Voice Channel created

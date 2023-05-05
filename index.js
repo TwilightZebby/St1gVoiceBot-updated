@@ -66,7 +66,7 @@ for ( const File of ModalFiles )
 // DISCORD - READY EVENT
 DiscordClient.once('ready', () => {
     DiscordClient.user.setPresence({ status: 'online' });
-    console.log(`${DiscordClient.user.username}#${DiscordClient.user.discriminator} is online and ready!`);
+    console.log(`${DiscordClient.user.tag} is online and ready!`);
 });
 
 
@@ -269,7 +269,7 @@ Permissions I require in **<#${ParentCategoryId}>** :
                     type: ChannelType.GuildVoice,
                     parent: ParentCategoryId,
                     name: `${newState.member.user.username}`,
-                    reason: `${newState.member.user.username}#${newState.member.user.discriminator} created a new Temp VC`
+                    reason: `${newState.member.user.tag} created a new Temp VC`
                 })
                 .then(async (CreatedVoiceChannel) => {
                     // Voice Channel Created

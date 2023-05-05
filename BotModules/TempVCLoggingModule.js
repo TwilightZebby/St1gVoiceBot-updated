@@ -23,7 +23,7 @@ module.exports = {
         .setTitle("Temp VC Created")
         .addFields(
             { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
-            { name: `Channel Creator`, value: `**Tag:** ${creatorMember.user.username}#${creatorMember.user.discriminator}\n**Mention:** <@${creatorMember.id}>\n**ID:** *${creatorMember.id}*` }
+            { name: `Channel Creator`, value: `**Tag:** ${creatorMember.user.tag}\n**Mention:** <@${creatorMember.id}>\n**ID:** *${creatorMember.id}*` }
         )
         .setTimestamp(voiceChannel.createdAt);
 
@@ -70,8 +70,8 @@ module.exports = {
         .setTitle("Temp VC Deleted")
         .addFields(
             { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**ID:** *${voiceChannel.id}*` },
-            { name: `Channel's Last Owner`, value: `**Tag:** ${ChannelOwnerMember.user.username}#${ChannelOwnerMember.user.discriminator}\n**Mention:** <@${ChannelOwnerMember.id}>\n**ID:** *${ChannelOwnerMember.id}*` },
-            { name: `Channel's Creator`, value: `**Tag:** ${ChannelCreatorMember.user.username}#${ChannelCreatorMember.user.discriminator}\n**Mention:** <@${ChannelCreatorMember.id}>\n**ID:** *${ChannelCreatorMember.id}*` }
+            { name: `Channel's Last Owner`, value: `**Tag:** ${ChannelOwnerMember.user.tag}\n**Mention:** <@${ChannelOwnerMember.id}>\n**ID:** *${ChannelOwnerMember.id}*` },
+            { name: `Channel's Creator`, value: `**Tag:** ${ChannelCreatorMember.user.tag}\n**Mention:** <@${ChannelCreatorMember.id}>\n**ID:** *${ChannelCreatorMember.id}*` }
         )
         .setTimestamp(Date.now());
 
@@ -194,7 +194,7 @@ module.exports = {
                 message.mentions.users.forEach(user => {
                     let newUserObject = {
                         id: user.id,
-                        tag: `${user.username}#${user.discriminator}`,
+                        tag: `${user.tag}`,
                         isBot: user.bot
                     };
 
@@ -207,7 +207,7 @@ module.exports = {
                 message.mentions.members.forEach(member => {
                     let newMemberObject = {
                         id: member.id,
-                        tag: `${member.user.username}#${member.user.discriminator}`,
+                        tag: `${member.user.tag}`,
                         nickname: member.nickname,
                         isBot: member.user.bot
                     };
@@ -232,7 +232,7 @@ module.exports = {
             {
                 repliedUser = {
                     id: message.mentions.repliedUser.id,
-                    tag: `${message.mentions.repliedUser.username}#${message.mentions.repliedUser.discriminator}`,
+                    tag: `${message.mentions.repliedUser.tag}`,
                     isBot: message.mentions.repliedUser.bot
                 };
             }
@@ -243,7 +243,7 @@ module.exports = {
                 createdTimestamp: message.createdTimestamp,
                 system: message.system,
                 authorId: message.author.id,
-                authorTag: `${message.author.username}#${message.author.discriminator}`,
+                authorTag: `${message.author.tag}`,
                 authorNickname: message.member.nickname,
                 content: message.content,
                 cleanContent: message.cleanContent,
@@ -339,8 +339,8 @@ module.exports = {
         .setTitle(`Temp VC Ownership Transferred`)
         .addFields(
             { name: `Voice Channel`, value: `\n**Mention:** <#${voiceChannelId}>\n**ID:** *${voiceChannelId}*` },
-            { name: `Previous Owner`, value: `**Tag:** ${previousOwner.user.username}#${previousOwner.user.discriminator}\n**Mention:** <@${previousOwner.id}>\n**ID:** *${previousOwner.id}*` },
-            { name: `New Owner`, value: `**Tag:** ${newOwner.user.username}#${newOwner.user.discriminator}\n**Mention:** <@${newOwner.id}>\n**ID:** *${newOwner.id}*` }
+            { name: `Previous Owner`, value: `**Tag:** ${previousOwner.user.tag}\n**Mention:** <@${previousOwner.id}>\n**ID:** *${previousOwner.id}*` },
+            { name: `New Owner`, value: `**Tag:** ${newOwner.user.tag}\n**Mention:** <@${newOwner.id}>\n**ID:** *${newOwner.id}*` }
         )
         .setTimestamp(Date.now());
 
@@ -592,8 +592,8 @@ module.exports = {
         .setTitle(`Temp VC Member Rejected`)
         .addFields(
             { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
-            { name: `Member Rejected`, value: `**Tag:** ${memberRejected.user.username}#${memberRejected.user.discriminator}\n**Mention:** <@${memberRejected.id}>\n**ID:** *${memberRejected.id}*` },
-            { name: `Rejected By`, value: `**Tag:** ${channelOwner.user.username}#${channelOwner.user.discriminator}\n**Mention:** <@${channelOwner.id}>\n**ID:** *${channelOwner.id}*` }
+            { name: `Member Rejected`, value: `**Tag:** ${memberRejected.user.tag}\n**Mention:** <@${memberRejected.id}>\n**ID:** *${memberRejected.id}*` },
+            { name: `Rejected By`, value: `**Tag:** ${channelOwner.user.tag}\n**Mention:** <@${channelOwner.id}>\n**ID:** *${channelOwner.id}*` }
         )
         .setTimestamp(Date.now());
 
@@ -637,8 +637,8 @@ module.exports = {
         .setTitle(`Temp VC Member Permitted`)
         .addFields(
             { name: `Voice Channel`, value: `**Name:** ${voiceChannel.name}\n**Mention:** <#${voiceChannel.id}>\n**ID:** *${voiceChannel.id}*` },
-            { name: `Member Permitted`, value: `**Tag:** ${memberPermitted.user.username}#${memberPermitted.user.discriminator}\n**Mention:** <@${memberPermitted.id}>\n**ID:** *${memberPermitted.id}*` },
-            { name: `Permitted By`, value: `**Tag:** ${channelOwner.user.username}#${channelOwner.user.discriminator}\n**Mention:** <@${channelOwner.id}>\n**ID:** *${channelOwner.id}*` }
+            { name: `Member Permitted`, value: `**Tag:** ${memberPermitted.user.tag}\n**Mention:** <@${memberPermitted.id}>\n**ID:** *${memberPermitted.id}*` },
+            { name: `Permitted By`, value: `**Tag:** ${channelOwner.user.tag}\n**Mention:** <@${channelOwner.id}>\n**ID:** *${channelOwner.id}*` }
         )
         .setTimestamp(Date.now());
 
